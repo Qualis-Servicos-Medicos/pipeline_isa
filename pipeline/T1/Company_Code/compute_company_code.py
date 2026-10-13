@@ -24,6 +24,8 @@ def main():
                 id_hospital smallint,
                 id_enterprise smallint
             );
+
+            create index imparare2_company_code_idx on imparare2_company_code(record_id, id_enterprise, attendance_date, attendance_id);
         """
         dataRequest.execute(create_query)
 

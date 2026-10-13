@@ -156,6 +156,8 @@ def main():
                         and s.first_date::timestamp BETWEEN DATE_TRUNC('day', i.dthr_atendimento)::timestamp AND DATE_TRUNC('day', COALESCE(i."dthr_alta", now()))::timestamp
                 ORDER BY s.prontuario, s.month_start, s.month_end, s.first_date
             ) a;
+            
+        create index imparare2_isa_suspeita_v2_idx on imparare2_isa_suspeita_v2(paciente_id, id_enterprise, dt_infeccao);
     """
     dataRequest.execute(queryText= query)
 
