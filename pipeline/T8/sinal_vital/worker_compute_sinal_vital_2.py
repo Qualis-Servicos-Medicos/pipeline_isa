@@ -3,8 +3,7 @@ from ImpararePackage import maestro
 import pandas as pd
 import threading
 
-def main(args: tuple[pd.DataFrame, str]):
-    c, index_name = args
+def main(c: pd.DataFrame):
 
     deParaInterface = {
         "OXIGÊNIO (L/MIN)" : "O2", 
@@ -78,16 +77,14 @@ def main(args: tuple[pd.DataFrame, str]):
 
     c["valor"] = c["valor"].astype(str)
     
-    def elk_upload(c: pd.DataFrame, index_name: str):
+    def elk_upload(c: pd.DataFrame):
         client = dataRequest.ELASTICSEARCH_CONNECTION
-        c = maestro.keep_columns(df= c, arrayColumns= ["id", "paciente_id", "tipo_sinal", "dthr_coleta", "valor", "unimedida", "perfil", "ordem", "criterio"])
-        actions = maestro.generate_actions(c, index_name)
+        c = maestro.keep_columns(df= c, arrayColumns= ["id", "paciente_id", "id_enterprise", "tipo_sinal", "dthr_coleta", "valor", "unimedida", "perfil", "ordem", "criterio"])
+        actions = maestro.generate_actions(c, "sinais-vitais")
         maestro.bulk_upload_with_retry(client, actions, context="sinal_vital", thread_count=1)
-
-    table = "isa_sinal_vital"
     
-    job = threading.Thread(target= elk_upload, args=(c, index_name))
-    job_3 = threading.Thread(target=dataRequest.set_data_on_sql, args=(c, table), kwargs={"if_exists": "append", "isLocal": True})
+    job = threading.Thread(target= elk_upload, args=(c, ))
+    job_3 = threading.Thread(target=dataRequest.set_data_on_sql, args=(c, "isa_sinal_vital"), kwargs={"if_exists": "append", "isLocal": True})
     
     jobs = [
         job, 

@@ -10,7 +10,7 @@ def main():
     print(client.cluster.health())
     print(client.ping())
 
-    index_name = maestro.getELKIndexValue("sinais-vitais")
+    index_name = "sinais-vitais"
 
     if maestro.get_must_update_all_patients() == "1": 
         create_query = """
@@ -18,6 +18,7 @@ def main():
             CREATE UNLOGGED TABLE isa_sinal_vital (
                 id TEXT,
                 paciente_id INTEGER,
+                id_enterprise SMALLINT,
                 tipo_sinal TEXT,
                 dthr_coleta TIMESTAMP,
                 valor TEXT,
@@ -31,7 +32,7 @@ def main():
             );
         """
         dataRequest.execute(create_query, isLocal= True)
-        dataRequest.execute(create_query, isLocal= False)
+        # dataRequest.execute(create_query, isLocal= False)
 
         client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
         
@@ -57,6 +58,7 @@ def main():
                     "properties": {
                         "id": {"type": "keyword", "index": False, "doc_values": False},
                         "paciente_id": {"type": "integer"},
+                        "id_enterprise": {"type": "short"},
                         "tipo_sinal": {"type": "keyword", "index": False, "doc_values": False},
                         "dthr_coleta": {"type": "date", "index": False, "doc_values": False},
                         "valor": {"type": "keyword", "index": False, "doc_values": False},
@@ -111,16 +113,10 @@ def main():
                 s.uni_medida as unimedida,
                 null as perfil,
                 null as tipo_atendimento,
-                null as s.ordem,
-                null as s.criterio,
-                c.company_code, 
-                c.hospital_id as company_id,
+                null as ordem,
+                null as criterio,
                 s.id_enterprise
             FROM imparare2_isa_sinal_vital s
-            LEFT JOIN imparare_patient_company_treatment c 
-                ON s.registro = c.record_id
-                    AND s.dthr_coleta between c.attendance_date AND c.discharge_date
-                    AND c.company_code IS NOT null
             where s.tipo_registro in (
                 'OXIGÊNIO (L/MIN)', 'O2',
                 'FIO2 %', 'FIO2', 
@@ -146,36 +142,39 @@ def main():
         drop table if exists isa_sinais_vitais_paciente_valor;
         create unlogged table isa_sinais_vitais_paciente_valor as (
             select
-                paciente_id, 
-                tipo_sinal, 
+                paciente_id,
+                id_enterprise,
+                tipo_sinal,
                 dthr_coleta,
                 min(valor) valor_baixo,
                 max(valor) valor_alto
             from mid_isa_sinais_vitais
             where valor is not null
-            group by paciente_id, tipo_sinal, dthr_coleta
+            group by paciente_id, id_enterprise, tipo_sinal, dthr_coleta
         );
-        create index idx_isa_sinais_vitais_paciente_valor on isa_sinais_vitais_paciente_valor(paciente_id, tipo_sinal, dthr_coleta, valor_baixo, valor_alto);
+        create index idx_isa_sinais_vitais_paciente_valor on isa_sinais_vitais_paciente_valor(paciente_id, id_enterprise, tipo_sinal, dthr_coleta, valor_baixo, valor_alto);
     """
     dataRequest.execute(createMidTables, isLocal= True)
 
     append_query = """
         select 
-            distinct on (isv.paciente_id, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
+            distinct on (isv.paciente_id, isv.id_enterprise, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
             isv.* 
         from mid_isa_sinais_vitais isv
         join isa_sinais_vitais_paciente_valor isvpv
             on isv.paciente_id = isvpv.paciente_id
+            and isv.id_enterprise = isvpv.id_enterprise
             and isv.tipo_sinal = isvpv.tipo_sinal
             and isv.dthr_coleta = isvpv.dthr_coleta
         where isv.valor = isvpv.valor_baixo
         union all
         select 
-            distinct on (isv.paciente_id, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
+            distinct on (isv.paciente_id, isv.id_enterprise, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
             isv.* 
         from mid_isa_sinais_vitais isv
         join isa_sinais_vitais_paciente_valor isvpv
             on isv.paciente_id = isvpv.paciente_id
+            and isv.id_enterprise = isvpv.id_enterprise
             and isv.tipo_sinal = isvpv.tipo_sinal
             and isv.dthr_coleta = isvpv.dthr_coleta
         where isv.valor = isvpv.valor_alto
@@ -185,7 +184,7 @@ def main():
     df_iterator = dataRequest.get_data(queryText= append_query)
 
     with Pool(4) as pool:
-        for _ in pool.imap_unordered(worker, zip(df_iterator, itertools.repeat(index_name))):
+        for _ in pool.imap_unordered(worker, df_iterator):
             pass
 
 if __name__ == "__main__":
