@@ -294,7 +294,7 @@ def main():
         LEFT JOIN imparare_patient_company_treatment c 
             ON isa_encontro.registro = c.record_id
                 AND c.id_enterprise = isa_encontro.id_enterprise
-                AND isa_encontro.data_dia between c.attendance_date AND c.discharge_date + interval '1 day'
+                AND isa_encontro.data_dia::Date between c.attendance_date AND (c.discharge_date + interval '1 day')
     """
     df_iterator = dataRequest.get_data(queryText= append_query)
 
