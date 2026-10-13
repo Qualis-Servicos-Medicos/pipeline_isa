@@ -161,7 +161,7 @@ def main():
 
     append_query = """
         SELECT 
-            (xr.xray_request_date::varchar || h.id_enterprise::varchar ||xr.xray_delivery_date::varchar||xr.record_id::varchar||xr.xray_exam_description::varchar||xr.attendance_type::varchar) as id, 
+            xr.xray_request_date::varchar || '_' || h.id_enterprise::varchar || '_' || xr.xray_delivery_date::varchar || '_' || xr.record_id::varchar || '_' || xr.xray_exam_description::varchar || '_' || xr.attendance_type::varchar as id, 
             xr.record_id as patient_id,
             h.id_enterprise,
             null as codigo_laudo, 

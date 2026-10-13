@@ -117,7 +117,7 @@ def main():
         drop table if exists mid_isa_sinais_vitais;
         create unlogged table mid_isa_sinais_vitais as (
             SELECT 
-                (registro::varchar||dthr_coleta::varchar||tipo_registro::varchar||valor_medida::varchar||perfil::varchar||uni_medida::varchar||id_enterprise::varchar) as id, 
+                registro::varchar|| '_' ||dthr_coleta::varchar|| '_' ||tipo_registro::varchar|| '_' ||valor_medida::varchar|| '_' ||perfil::varchar|| '_' ||uni_medida::varchar|| '_' ||id_enterprise::varchar as id, 
                 s.registro as paciente_id, 
                 s.tipo_registro as tipo_sinal,
                 date(s.dthr_coleta) as dthr_coleta,

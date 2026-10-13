@@ -277,7 +277,7 @@ def main():
     
     append_query = """
         SELECT distinct 
-            md5(isa_encontro.registro::varchar || isa_encontro.id_enterprise::varchar || isa_encontro.data_dia::varchar || isa_encontro.unidade_fst::varchar || isa_encontro.unidade_lst::varchar) as id,
+            isa_encontro.registro::varchar || '_' || isa_encontro.id_enterprise::varchar || '_' || isa_encontro.data_dia::varchar || '_' || isa_encontro.unidade_fst::varchar || '_' || isa_encontro.unidade_lst::varchar as id,
             isa_encontro.registro AS prontuario,
             c.id_hospital::SMALLINT as id_hospital,
             isa_encontro.id_enterprise::SMALLINT AS id_enterprise,

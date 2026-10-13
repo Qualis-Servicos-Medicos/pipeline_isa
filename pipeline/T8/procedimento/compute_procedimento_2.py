@@ -154,7 +154,7 @@ def main():
     
     append_query = """
         SELECT 
-            s.patient_id::text || ' ' || s.id_enterprise || ' ' || s.dthr_procedimento::text as id,
+            s.patient_id::text || '_' || s.id_enterprise || '_' || s.dthr_procedimento::text || '_' || s.nome_procedimento as id,
             null as perfil,
             s.patient_id:: integer as patient_id,
             s.id_enterprise,

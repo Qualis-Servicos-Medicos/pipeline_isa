@@ -145,7 +145,7 @@ def main():
 
     append_query= """
        SELECT 
-            md5(registro::varchar || s.id_enterprise::varchar || dthr_prescricao::varchar||atb::varchar||dose::varchar||attendance_type::varchar) as id, 
+            registro::varchar || '_' || s.id_enterprise::varchar || '_' || dthr_prescricao::varchar || '_' || atb::varchar || '_' || dose::varchar || '_' || attendance_type::varchar  || '_' || unidade::varchar  || '_' || frequencia::varchar  || '_' || via::varchar as id, 
             registro as patient_id, 
             s.id_enterprise,
             null as codigo_prescricao,

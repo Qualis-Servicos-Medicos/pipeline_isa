@@ -59,7 +59,7 @@ def main():
 
     append_query = """
         SELECT DISTINCT
-            md5(s.registro::text || s.id_enterprise::text || (s.cd_atendimento)::text) as id,
+            s.registro::text || '_' || s.id_enterprise::text || '_' || s.cd_atendimento::text as id,
             s.*
         FROM imparare2_internacoes_v2_stacked_by_cd_atendimento s
     """

@@ -8,7 +8,7 @@ def main():
 
         CREATE UNLOGGED TABLE imparare2_isa_infeccao_v2 AS
             SELECT  distinct
-                md5(ci.paciente_id::text || (ci.dt_infeccao)::text || (ci.id_enterprise)::text) AS id,
+                ci.paciente_id::text || '_' || ci.dt_infeccao::text || '_' || ci.id_enterprise::text AS id,
                 ci.paciente_id::int4                                        AS paciente_id, 
                 ci.id_enterprise::int2                                      AS id_enterprise,
                 ci.dt_infeccao::date                                        AS dt_infeccao, 
