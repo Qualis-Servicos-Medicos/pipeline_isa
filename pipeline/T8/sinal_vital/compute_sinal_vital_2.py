@@ -27,8 +27,7 @@ def main():
                 tipo_atendimento TEXT,
                 ordem TEXT,
                 criterio TEXT,
-                company_code TEXT,
-                company_id TEXT
+                id_hospital SMALLINT
             );
         """
         dataRequest.execute(create_query, isLocal= True)
@@ -117,7 +116,7 @@ def main():
         drop table if exists mid_isa_sinais_vitais;
         create unlogged table mid_isa_sinais_vitais as (
             SELECT 
-                registro::varchar|| '_' ||dthr_coleta::varchar|| '_' ||tipo_registro::varchar|| '_' ||valor_medida::varchar|| '_' ||perfil::varchar|| '_' ||uni_medida::varchar|| '_' ||id_enterprise::varchar as id, 
+                registro::varchar|| '_' ||dthr_coleta::varchar|| '_' ||tipo_registro::varchar|| '_' ||valor_medida::varchar|| '_' ||perfil::varchar|| '_' ||uni_medida::varchar|| '_' ||s.id_enterprise::varchar as id, 
                 s.registro as paciente_id, 
                 s.tipo_registro as tipo_sinal,
                 date(s.dthr_coleta) as dthr_coleta,
@@ -127,8 +126,19 @@ def main():
                 null as tipo_atendimento,
                 null as ordem,
                 null as criterio,
-                s.id_enterprise
+                s.id_enterprise,
+                c.id_hospital
             FROM imparare2_isa_sinal_vital s
+            LEFT JOIN imparare2_company_code c 
+                ON s.registro = c.record_id
+                AND s.id_enterprise = c.id_enterprise
+                AND DATE(s.dthr_coleta) between DATE(c.attendance_date)
+                AND coalesce(c.hospital_discharge_date, (
+                    SELECT min(c2.attendance_date)
+                    FROM imparare2_company_code c2
+                    WHERE c2.record_id = c.record_id AND c2.attendance_id > c.attendance_id
+                    GROUP BY c2.record_id 
+                ), now()) + INTERVAL '1 day'
             where s.tipo_registro in (
                 'OXIGÊNIO (L/MIN)', 'O2',
                 'FIO2 %', 'FIO2', 
@@ -156,46 +166,54 @@ def main():
             select
                 paciente_id,
                 id_enterprise,
+                id_hospital,
                 tipo_sinal,
                 dthr_coleta,
                 min(valor) valor_baixo,
                 max(valor) valor_alto
             from mid_isa_sinais_vitais
             where valor is not null
-            group by paciente_id, id_enterprise, tipo_sinal, dthr_coleta
+            group by paciente_id, id_enterprise, id_hospital, tipo_sinal, dthr_coleta
         );
-        create index idx_isa_sinais_vitais_paciente_valor on isa_sinais_vitais_paciente_valor(paciente_id, id_enterprise, tipo_sinal, dthr_coleta, valor_baixo, valor_alto);
+        create index idx_isa_sinais_vitais_paciente_valor on isa_sinais_vitais_paciente_valor(paciente_id, id_enterprise, id_hospital, tipo_sinal, dthr_coleta, valor_baixo, valor_alto);
     """
     dataRequest.execute(createMidTables, isLocal= True)
 
     append_query = """
+    select 
+        distinct on (a.paciente_id, a.id_enterprise, a.id_hospital, a.tipo_sinal, a.dthr_coleta, a.valor)
+        a.*
+    from (
         select 
-            distinct on (isv.paciente_id, isv.id_enterprise, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
+            distinct on (isv.paciente_id, isv.id_enterprise, isv.id_hospital, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
             isv.* 
         from mid_isa_sinais_vitais isv
         join isa_sinais_vitais_paciente_valor isvpv
             on isv.paciente_id = isvpv.paciente_id
             and isv.id_enterprise = isvpv.id_enterprise
+            and isv.id_hospital = isvpv.id_hospital
             and isv.tipo_sinal = isvpv.tipo_sinal
             and isv.dthr_coleta = isvpv.dthr_coleta
         where isv.valor = isvpv.valor_baixo
         union all
         select 
-            distinct on (isv.paciente_id, isv.id_enterprise, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
+            distinct on (isv.paciente_id, isv.id_enterprise, isv.id_hospital, isv.tipo_sinal, isv.dthr_coleta, isv.valor)
             isv.* 
         from mid_isa_sinais_vitais isv
         join isa_sinais_vitais_paciente_valor isvpv
             on isv.paciente_id = isvpv.paciente_id
             and isv.id_enterprise = isvpv.id_enterprise
+            and isv.id_hospital = isvpv.id_hospital
             and isv.tipo_sinal = isvpv.tipo_sinal
             and isv.dthr_coleta = isvpv.dthr_coleta
         where isv.valor = isvpv.valor_alto
-            and isvpv.valor_alto != isvpv.valor_baixo;
+            and isvpv.valor_alto != isvpv.valor_baixo
+    ) a;
     """
 
     df_iterator = dataRequest.get_data(queryText= append_query)
 
-    with Pool(4) as pool:
+    with Pool(8) as pool:
         for _ in pool.imap_unordered(worker, df_iterator):
             pass
 

@@ -5,7 +5,7 @@ import pandas as pd
 
 
 def worker(c = pd.DataFrame):
-    #c, pos = args
+    c["id_hospital"] = c["id_hospital"].astype("Int32")
     c = maestro.remove_columns(df= c, arrayColumns= ["tipo_intern", "tipo_clinica", "especialidade", "unidade", "nmconvenio"])
 
     c = maestro.fillnan(df= c, arrayColumns=["alta", "los"],arraySubstitui=["Ainda internado ou não consta no sistema", "-1"])
@@ -38,7 +38,8 @@ def main():
                 dthr_atendimento TIMESTAMP,
                 dthr_alta TIMESTAMP,
                 tipo_alta TEXT,
-                tempo_estadia INTEGER
+                tempo_estadia INTEGER,
+                id_hospital SMALLINT
             );
         """
         dataRequest.execute(create_query, isLocal= True)
@@ -60,8 +61,19 @@ def main():
     append_query = """
         SELECT DISTINCT
             s.registro::text || '_' || s.id_enterprise::text || '_' || s.cd_atendimento::text as id,
-            s.*
+            s.*,
+            c.id_hospital
         FROM imparare2_internacoes_v2_stacked_by_cd_atendimento s
+        LEFT JOIN imparare2_company_code c 
+            ON s.registro = c.record_id
+                AND s.id_enterprise = c.id_enterprise
+                AND DATE(s.dthr_atendimento) between DATE(c.attendance_date)
+                AND coalesce(c.hospital_discharge_date, (
+                    SELECT min(c2.attendance_date)
+                    FROM imparare2_company_code c2
+                    WHERE c2.record_id = c.record_id AND c2.attendance_id > c.attendance_id
+                    GROUP BY c2.record_id 
+                ), now()) + INTERVAL '1 day';
     """
     df_iterator = dataRequest.get_data(queryText= append_query, chunck= 2000)
 

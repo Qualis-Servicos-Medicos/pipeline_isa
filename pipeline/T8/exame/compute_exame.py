@@ -29,7 +29,8 @@ def main():
                 criterio TEXT,
                 gmr TEXT,
                 positivo TEXT,
-                pcr_covid TEXT
+                pcr_covid TEXT,
+                id_hospital SMALLINT
             );
         """
         # dataRequest.execute(create_query, isLocal= False)
@@ -130,8 +131,19 @@ def main():
             null as criterio,
             null as gmr,
             null as positivo,
-            null as pcr_covid
+            null as pcr_covid,
+            c.id_hospital
         FROM imparare2_exameslaboratorio_followup_stacked s
+        LEFT JOIN imparare2_company_code c 
+            ON s.registro = c.record_id
+                AND s.id_enterprise = c.id_enterprise
+                AND DATE(s.dthr_pedido) between DATE(c.attendance_date)
+                AND coalesce(c.hospital_discharge_date, (
+                    SELECT min(c2.attendance_date)
+                    FROM imparare2_company_code c2
+                    WHERE c2.record_id = c.record_id AND c2.attendance_id > c.attendance_id
+                    GROUP BY c2.record_id 
+                ), now()) + INTERVAL '1 day'
         WHERE s.ds_resultado is not null;
     """
 

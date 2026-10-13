@@ -73,7 +73,8 @@ def main():
                 laudo_texto TEXT,
                 tipo_atendimento TEXT,
                 ordem TEXT,
-                criterio TEXT
+                criterio TEXT,
+                id_hospital SMALLINT
             );
         """
         # dataRequest.execute(create_query, isLocal= False)
@@ -171,10 +172,11 @@ def main():
             LOWER(xr.xray_content::text) as laudo_texto, 
             xr.attendance_type as tipo_atendimento, 
             null as ordem, 
-            null as criterio
+            null as criterio,
+            h.id_hospital
         FROM xrays_reports xr
 		inner join hospitals h
-		on h.id_hospital = xr.id_hospital;
+		    on h.id_hospital = xr.id_hospital;
     """
     
     df_iterator = dataRequest.get_data(queryText= append_query)

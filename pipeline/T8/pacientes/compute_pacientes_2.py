@@ -65,7 +65,8 @@ def main():
                 dt_nascimento TIMESTAMP,
                 sexo TEXT,
                 idade_hoje smallint,
-                idade_dias_hoje int4
+                idade_dias_hoje int4,
+                id_hospital SMALLINT
             );
         """
         # dataRequest.execute(create_query, isLocal= False)
@@ -149,8 +150,9 @@ def main():
                 I.dt_nascimento_parsed,
                 EXTRACT(YEAR FROM AGE(date_trunc('day', ld.dia), I.dt_nascimento_parsed))::smallint AS idade_hoje,
                 date(ld.dia) - date(I.dt_nascimento_parsed) AS idade_dias_hoje,
-                pr."patient_name" as nome
-            FROM "imparare2_pacientes_prepared" as I
+                pr.patient_name as nome,
+                pr.id_hospital
+            FROM imparare2_pacientes_prepared as I
             INNER JOIN (
                 select
                     prontuario,

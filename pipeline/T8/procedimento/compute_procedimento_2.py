@@ -6,6 +6,7 @@ from multiprocessing import Pool, cpu_count
 import itertools
 
 def worker(c: pd.DataFrame):
+    c["id_hospital"] = c["id_hospital"].astype("Int32")
     c = maestro.incrise_by_n_hours(df= c, arrayColumns= ["dthr_criacao", "dthr_procedimento", "dthr_fim_procedimento"], hours= 3)
     c = maestro.remove_columns(df= c, column= "id_cirurgia")
     c = maestro.to_float(df= c, arrayColumns= ["tempo_cirurgia"])
@@ -66,7 +67,8 @@ def main():
                 nome_procedimentos TEXT,
                 tipo_atendimento TEXT,
                 ordem TEXT,
-                criterio TEXT
+                criterio TEXT,
+                id_hospital SMALLINT
             );
         """
         dataRequest.execute(create_query, isLocal= True)
@@ -167,8 +169,19 @@ def main():
             s.nome_procedimento:: text as nome_procedimentos,
             null as tipo_atendimento,
             null as ordem,
-            null as criterio
-        FROM imparare2_cirurgias_union_gamb s;
+            null as criterio,
+            c.id_hospital
+        FROM imparare2_cirurgias_union_gamb s
+        LEFT JOIN imparare2_company_code c 
+            ON s.patient_id = c.record_id
+                AND s.id_enterprise = c.id_enterprise
+                AND DATE(s.dthr_procedimento) between DATE(c.attendance_date)
+                AND coalesce(c.hospital_discharge_date, (
+                    SELECT min(c2.attendance_date)
+                    FROM imparare2_company_code c2
+                    WHERE c2.record_id = c.record_id AND c2.attendance_id > c.attendance_id
+                    GROUP BY c2.record_id 
+                ), now()) + INTERVAL '1 day';
     """
     df_iterator = dataRequest.get_data(queryText= append_query)
 

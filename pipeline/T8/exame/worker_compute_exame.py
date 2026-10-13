@@ -5,7 +5,7 @@ import pandas as pd
 import threading
 
 def main(c: pd.DataFrame):
-    
+    c["id_hospital"] = c["id_hospital"].astype("Int32")
     def process(row):
         resultado = row['resultado'].lower()
         exame = row['exame'].lower()

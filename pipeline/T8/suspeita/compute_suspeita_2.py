@@ -51,13 +51,13 @@ def main():
         LEFT JOIN imparare2_company_code c 
             ON s.paciente_id = c.record_id
             AND s.id_enterprise = c.id_enterprise
-            AND s.dt_infeccao between c.attendance_date 
+            AND DATE(s.dt_infeccao) between DATE(c.attendance_date)
             AND coalesce(c.hospital_discharge_date, (
                 SELECT min(c2.attendance_date)
                 FROM imparare2_company_code c2
                 WHERE c2.record_id = c.record_id AND c2.attendance_id > c.attendance_id
                 GROUP BY c2.record_id 
-            ), now());
+            ), now()) + INTERVAL '1 day';
     """
 
     pos = 0
