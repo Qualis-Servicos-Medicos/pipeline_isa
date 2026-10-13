@@ -72,11 +72,10 @@ def main():
             maestro.wait_for_index_health(client, index_name)
     else:
         # Drop local table
-        dataRequest.execute("DELETE FROM isa_sinal_vital WHERE paciente_id in (select distinct record_id from patients_to_update)", isLocal= True)
+        dataRequest.execute("DELETE FROM isa_sinal_vital WHERE (paciente_id, id_enterprise) in (select distinct record_id, id_enterprise from patients_to_update)", isLocal= True)
         
         #Busca IDS para deleção
-        df = dataRequest.get_data(queryText= f"SELECT distinct record_id FROM patients_to_update", chunck= None)
-        pcts_ids = df['record_id'].tolist()
+        df = dataRequest.get_data(queryText= f"SELECT distinct record_id, id_enterprise FROM patients_to_update", chunck= None)
 
         # Drop ELK index
         def chunks(seq, n):
@@ -85,21 +84,34 @@ def main():
                 yield seq[i:i + n]
 
         total= 0
-        for lote in chunks(pcts_ids, 1000):
+        for lote in chunks(df, 1000):
             resp = client.delete_by_query(
                 index= index_name,
                 query= {
-                    "terms": {
-                        "paciente_id": lote
+                    "bool": {
+                        "should": [
+                            {
+                                "bool": {
+                                    "filter": [
+                                        {"term": {"id_enterprise": ent}},
+                                        {"terms": {"prontuario": grupo["record_id"].tolist()}},
+                                    ]
+                                }
+                            }
+                            for ent, grupo in lote.groupby("id_enterprise")
+                        ], 
+                        "minimum_should_match": 1
                     }
                 },
                 conflicts= "proceed",
-                refresh= True,
+                refresh= False,
                 slices= "auto"
             )
             total += resp['deleted']
             print(f"Deletados {resp['deleted']} sinais vitais do lote de {len(lote)} pacientes. Total deletados até agora: {total}")
-        print(f"Deletados {total} sinais vitais no total para {len(pcts_ids)} pacientes.")
+
+        client.indices.refresh(index=index_name)
+        print(f"Deletados {total} sinais vitais no total para {len(df)} pacientes.")
 
     createMidTables = f"""
         drop table if exists mid_isa_sinais_vitais;
