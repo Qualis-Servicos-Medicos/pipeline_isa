@@ -19,10 +19,10 @@ ELASTICSEARCH_PASSWORD = "Qu@lis2006*"
 ELASTICSEARCH_URL = "https://elc.roboisa.com.br/"
 ELASTICSEARCH_CONNECTION = Elasticsearch(hosts= ELASTICSEARCH_URL, basic_auth= (ELASTICSEARCH_LOGIN, ELASTICSEARCH_PASSWORD), request_timeout=300)
 
-REMOTELOGIN = ""
-REMOTEPASSOWORD = ""
+REMOTELOGIN = "u_isa_prd"
+REMOTEPASSOWORD = "tsTU*5FB5*14"
 REMOTEHOST = "roboisa-prd.cq4frpe2fx4i.sa-east-1.rds.amazonaws.com"
-REMOTEDATABASE_NAME = ""
+REMOTEDATABASE_NAME = "isa_prd"
 
 REMOTEDATABASE = sa.create_engine(
     f"postgresql+psycopg2://{REMOTELOGIN}:{REMOTEPASSOWORD}@{REMOTEHOST}/{REMOTEDATABASE_NAME}",
