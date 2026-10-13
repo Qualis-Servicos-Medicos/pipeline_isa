@@ -6,6 +6,8 @@ def main():
         SELECT
             id,
             paciente_id,
+            id_enterprise,
+            id_hospital,
             dt_infeccao,
             tipo_infeccao,
             avaliacao_status,
@@ -18,10 +20,8 @@ def main():
             aval_dt_infec,
             relacionado,
             outra_infec
-        FROM
-            public."isa_avaliacao"
-        ORDER BY
-            dt_infeccao DESC;
+        FROM isa_avaliacao
+        ORDER BY dt_infeccao DESC;
     """
     df = dataRequest.get_data(queryText= query, isLocal= False)
 

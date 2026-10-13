@@ -5,20 +5,20 @@ from typing import Any
 
 def main():
     query = """
-        SELECT DISTINCT ON ("isa_suspeita".id)
-            "isa_suspeita".id,
-            "isa_suspeita".paciente_id::text,
+        SELECT DISTINCT ON (isa_suspeita.id)
+            isa_suspeita.id,
+            isa_suspeita.paciente_id::text,
             nome,
-            "isa_suspeita".dt_infeccao,
-            "isa_suspeita".prob_perc,
-            "isa_suspeita".max_prob,
+            isa_suspeita.dt_infeccao,
+            isa_suspeita.prob_perc,
+            isa_suspeita.max_prob,
             (
                 CASE
-                    WHEN "isa_suspeita".max_prob >= 0.5
-                    AND "isa_suspeita".max_prob < 0.7 THEN 'MEDIA'
+                    WHEN isa_suspeita.max_prob >= 0.5
+                    AND isa_suspeita.max_prob < 0.7 THEN 'MEDIA'
                     ELSE (
                         CASE
-                            WHEN "isa_suspeita".max_prob >= 0.7 THEN 'ALTA'
+                            WHEN isa_suspeita.max_prob >= 0.7 THEN 'ALTA'
                             ELSE 'BAIXA'
                         END
                     )
@@ -43,13 +43,13 @@ def main():
             prob_perc_comunitaria AS comunitaria,
             pred_iras,
             prob_perc_iras AS iras
-        FROM "isa_suspeita"
-        LEFT JOIN "isa_pacientes" 
-            ON "isa_suspeita".paciente_id = "isa_pacientes".id
-        LEFT JOIN "isa_infeccao" 
-            ON "isa_suspeita".paciente_id = "isa_infeccao".paciente_id
-            AND "isa_suspeita".dt_infeccao = "isa_infeccao".dt_infeccao
-        ORDER BY "isa_suspeita".id, "isa_suspeita".dt_infeccao DESC
+        FROM isa_suspeita
+        LEFT JOIN isa_pacientes 
+            ON isa_suspeita.paciente_id = isa_pacientes.id
+        LEFT JOIN isa_infeccao 
+            ON isa_suspeita.paciente_id = isa_infeccao.paciente_id
+            AND isa_suspeita.dt_infeccao = isa_infeccao.dt_infeccao
+        ORDER BY isa_suspeita.id, isa_suspeita.dt_infeccao DESC
     """
     df = dataRequest.get_data(queryText= query)
     

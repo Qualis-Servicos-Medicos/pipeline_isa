@@ -5,9 +5,10 @@ def main():
     query = """
         SELECT
             id,
-            unidades
-        FROM
-            public."isa_unidades";
+            unidades,
+            id_hospital,
+            id_enterprise
+        FROM isa_unidades;
     """
     df = dataRequest.get_data(queryText= query, isLocal= False)
     
