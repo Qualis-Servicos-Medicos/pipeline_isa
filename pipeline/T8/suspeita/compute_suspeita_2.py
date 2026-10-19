@@ -19,7 +19,7 @@ def main():
             );
             """
         dataRequest.execute(create_query, isLocal= True)
-        # dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute(create_query, isLocal= False)
     else:
         # Drop local table
         dataRequest.execute("DELETE FROM isa_suspeita WHERE (paciente_id, id_enterprise) in (select distinct record_id, id_enterprise from patients_to_update)", isLocal= True)
@@ -67,7 +67,7 @@ def main():
         # Salvando no local
         dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_suspeita", isLocal= True, if_exists= "append")
         # Salvando no remoto
-        # dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_suspeita", isLocal= False, if_exists= "append")
+        dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_suspeita", isLocal= False, if_exists= "append")
         pos += 1
 
 if __name__ == "__main__":

@@ -64,7 +64,7 @@ def main():
                 id_hospital SMALLINT
             );
         """
-        # dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute(create_query, isLocal= False)
         dataRequest.execute(create_query, isLocal= True)
         client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
         

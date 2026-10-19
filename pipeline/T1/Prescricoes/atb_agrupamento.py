@@ -446,7 +446,9 @@ def main():
             FROM prescriptions p
             inner join hospitals h
             	on p.id_hospital = h.id_hospital 
---             where record_id in (select distinct record_id from patients_to_update) or 1 = {maestro.get_must_update_all_patients()}
+            INNER JOIN patients_to_update ptu
+                on ptu.record_id = p.record_id
+                    AND h.id_enterprise = ptu.id_enterprise
         ) p
         GROUP BY registro, id_enterprise, prescription_date, atb;
     """

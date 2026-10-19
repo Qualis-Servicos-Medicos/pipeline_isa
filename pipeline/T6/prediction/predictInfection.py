@@ -46,7 +46,8 @@ def main():
     append_query = """
         SELECT 
             *
-        FROM imparare2_dataset_label_full
+        FROM imparare2_dataset_label_full df
+        where df.evo_count_dia > 0
     """
     
     path = "/workspaces/pipeline_isa/ScriptsLibrary/pipeline/T6/models"

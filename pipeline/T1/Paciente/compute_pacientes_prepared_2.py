@@ -47,7 +47,9 @@ def main():
             FROM patients_records pr
             JOIN hospitals h
                 ON pr.id_hospital = h.id_hospital
-            -- where record_id in (select distinct record_id from patients_to_update) or 1 = {maestro.get_must_update_all_patients()}
+            INNER JOIN patients_to_update ptu
+                ON pr.record_id = ptu.record_id
+                    AND h.id_enterprise = ptu.id_enterprise
         ) dku__subquery
         GROUP BY registro, id_enterprise;
     """

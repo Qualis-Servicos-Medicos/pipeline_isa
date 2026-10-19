@@ -33,7 +33,7 @@ def main():
                 id_hospital SMALLINT
             );
         """
-        # dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute(create_query, isLocal= False)
         dataRequest.execute(create_query, isLocal= True)
         client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
         
@@ -78,7 +78,7 @@ def main():
         dataRequest.execute("DELETE FROM isa_exame WHERE (patient_id, id_enterprise) in (select distinct record_id, id_enterprise from patients_to_update)", isLocal= True)
 
         # Drop ELK index
-        df = dataRequest.get_data(queryText= f"SELECT distinct record_id FROM patients_to_update", chunck= None)
+        df = dataRequest.get_data(queryText= f"SELECT distinct record_id, id_enterprise FROM patients_to_update", chunck= None)
         
         def chunks(seq, n):
             """Yield successive n-sized chunks from seq."""

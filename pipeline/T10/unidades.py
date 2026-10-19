@@ -6,8 +6,7 @@ def main():
         SELECT
             id,
             unidades,
-            id_hospital,
-            id_enterprise
+            id_hospital
         FROM isa_unidades;
     """
     df = dataRequest.get_data(queryText= query, isLocal= False)
@@ -16,7 +15,7 @@ def main():
     print(client.cluster.health())
     print(client.ping())
 
-    index_name = maestro.getELKIndexValue("unidades")
+    index_name = "unidades"
 
     client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
     

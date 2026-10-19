@@ -3,7 +3,7 @@ import pandas as pd
 from multiprocessing import Pool
 
 def worker(c: pd.DataFrame):
-    # dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_pacientes_companies", if_exists= "append", isLocal= False)
+    dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_pacientes_companies", if_exists= "append", isLocal= False)
     dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_pacientes_companies", if_exists= "append", isLocal= True)
 
 def main():
@@ -16,7 +16,7 @@ def main():
                 id_enterprise smallint
             );
         """
-        # dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute(create_query, isLocal= False)
         dataRequest.execute(create_query, isLocal= True)
     else:
         # Drop local table

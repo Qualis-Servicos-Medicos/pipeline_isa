@@ -43,10 +43,12 @@ def main():
             a.hospital_discharge_date,
             h.id_hospital,
             h.id_enterprise
-        from hospitalization a
+        FROM hospitalization a
         INNER JOIN hospitals as h
         	on a.id_hospital = h.id_hospital
-        WHERE a.record_id in (select distinct record_id from patients_to_update) or 1 = {maestro.get_must_update_all_patients()};
+        INNER JOIN patients_to_update ptu
+            ON a.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise
     """
     
     df_iterator = dataRequest.get_data(queryText= append_query, chunck= 2000)

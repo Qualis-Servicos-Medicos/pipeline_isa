@@ -39,12 +39,12 @@ def worker(c: pd.DataFrame):
 
     table = "isa_infeccao"
     job = threading.Thread(target= elk_upload, args=(c.copy(), ))
-    # job_2 = threading.Thread(target=dataRequest.set_data_on_sql, args=(c, table), kwargs={"if_exists": "append", "isLocal": False})
+    job_2 = threading.Thread(target=dataRequest.set_data_on_sql, args=(c, table), kwargs={"if_exists": "append", "isLocal": False})
     job_3 = threading.Thread(target=dataRequest.set_data_on_sql, args=(c, table), kwargs={"if_exists": "append", "isLocal": True})
     
     jobs = [
         job, 
-        # job_2, 
+        job_2, 
         job_3
     ]
     for j in jobs:
@@ -93,7 +93,7 @@ def main():
             );
         """
         dataRequest.execute(create_query, isLocal= True)
-        # dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute(create_query, isLocal= False)
         client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
         
         if not client.indices.exists(index=index_name):

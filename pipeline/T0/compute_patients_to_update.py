@@ -7,7 +7,9 @@ def main():
             id SERIAL PRIMARY KEY,
             execution_date DATE NOT NULL DEFAULT CURRENT_DATE
         );
+
         DROP TABLE IF EXISTS patients_to_update;
+        
         CREATE TABLE patients_to_update AS (
             SELECT 
                 DISTINCT 
@@ -79,7 +81,7 @@ def main():
             ) a
         );
 
-        CREATE INDEX idx_patients_to_update on patients_to_update(record_id);
+        CREATE INDEX idx_patients_to_update on patients_to_update(record_id, id_enterprise);
     """)
 
 if __name__ == "__main__":

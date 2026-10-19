@@ -919,11 +919,7 @@ def main():
         group by is2.id_hospital, is2.id_enterprise
     """
     c = dataRequest.get_data(queryText= query_formated, chunck= None)
-    if pos == 0:
-        dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_relatorio", isLocal=  False, if_exists= "replace")
-        pos += 1
-    else:
-        dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_relatorio", isLocal=  False, if_exists= "append")
+    dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_relatorio", isLocal=  False, if_exists= "replace")
     
 
 if __name__ == "__main__":

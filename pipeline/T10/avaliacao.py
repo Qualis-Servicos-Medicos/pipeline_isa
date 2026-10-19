@@ -6,8 +6,8 @@ def main():
         SELECT
             id,
             paciente_id,
-            id_enterprise,
-            id_hospital,
+            h.id_enterprise,
+            h.id_hospital,
             dt_infeccao,
             tipo_infeccao,
             avaliacao_status,
@@ -20,7 +20,9 @@ def main():
             aval_dt_infec,
             relacionado,
             outra_infec
-        FROM isa_avaliacao
+        FROM isa_avaliacao a
+        inner join hospital h
+        	on a.id_hospital = h.id_hospital 
         ORDER BY dt_infeccao DESC;
     """
     df = dataRequest.get_data(queryText= query, isLocal= False)
@@ -29,7 +31,7 @@ def main():
     print(client.cluster.health())
     print(client.ping())
 
-    index_name = maestro.getELKIndexValue("avaliacoes")
+    index_name = "avaliacoes"
 
     client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
     

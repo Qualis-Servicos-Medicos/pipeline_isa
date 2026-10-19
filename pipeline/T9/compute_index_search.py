@@ -19,9 +19,9 @@ def main():
     # dataRequest.execute('CREATE INDEX IF NOT EXISTS avaliacao_idx on "isa_avaliacao"(paciente_id);', isLocal= False)
     # dataRequest.execute('CREATE INDEX IF NOT EXISTS avaliacao_idx2 on "isa_avaliacao"(dt_infeccao);', isLocal= False)
 
-    dataRequest.execute('CREATE INDEX IF NOT EXISTS suspeita_perc_idx on "isa_suspeita_perc"(paciente_id);', isLocal=  False)
-    dataRequest.execute('CREATE INDEX IF NOT EXISTS suspeita_perc_idx2 on "isa_suspeita_perc"(dt_infeccao);', isLocal=  False)
-    dataRequest.execute(' CREATE INDEX IF NOT EXISTS suspeita_perc_idx3 on "isa_suspeita_perc"(max_prob);', isLocal=  False)
+    # dataRequest.execute('CREATE INDEX IF NOT EXISTS suspeita_perc_idx on "isa_suspeita_perc"(paciente_id);', isLocal=  False)
+    # dataRequest.execute('CREATE INDEX IF NOT EXISTS suspeita_perc_idx2 on "isa_suspeita_perc"(dt_infeccao);', isLocal=  False)
+    # dataRequest.execute(' CREATE INDEX IF NOT EXISTS suspeita_perc_idx3 on "isa_suspeita_perc"(max_prob);', isLocal=  False)
 
 if __name__ == "__main__":
     main()

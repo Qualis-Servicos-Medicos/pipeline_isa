@@ -139,7 +139,9 @@ def main():
         FROM vital_signs vs
         INNER JOIN hospitals h
             ON vs.id_hospital = h.id_hospital
-        -- where record_id in (select distinct record_id from patients_to_update) or 1 = {maestro.get_must_update_all_patients()}
+        INNER JOIN patients_to_update ptu
+            ON vs.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise
     """
     df_iterator = dataRequest.get_data(queryText= append_query, chunck= 20000)
     

@@ -116,19 +116,20 @@ def main():
         dataRequest.execute(create_query)
 
     append_query = f"""
-        select 
+        SELECT 
             record_id as registro, 
             laboratory_request_date,
             exam_lab_name,
             er.exam_result_description as valor,
             exam_result_field_name as tipo,
             h.id_enterprise::SMALLINT
-        from exams_reports er
-        inner join hospitals h 
+        FROM exams_reports er
+        INNER JOIN hospitals h 
             on er.id_hospital = h.id_hospital
-        where -- (record_id in (select distinct record_id from patients_to_update) or 1 = {maestro.get_must_update_all_patients()})
-            -- AND 
-            (
+        INNER JOIN patients_to_update ptu
+            ON er.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise
+        WHERE  (
                 (LOWER(exam_lab_name) = 'hemograma' and exam_result_field_name in ('GLOBAL DE LEUCOCITOS', 'RDW', 'SEGMETADO NEUTROFILO', 'Contagem de leucócitos', 'Leucócitos', 'Segmentados')) 
                 or (er.exam_lab_name in ('PCR (PROTEINA C REATIVA)', 'PCR - Proteína C Reativa') and er.exam_result_field_name in ('RESULTADO', 'PCR - Proteína C Reativa'))
                 or er.exam_result_field_name ilike'%prot%li%'

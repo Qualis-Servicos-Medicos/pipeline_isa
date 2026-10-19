@@ -72,7 +72,7 @@ def main():
             );
         """
         dataRequest.execute(create_query, isLocal= True)
-        # dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute(create_query, isLocal= False)
         client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
         
         if not client.indices.exists(index=index_name):

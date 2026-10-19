@@ -21,7 +21,7 @@ def worker(c = pd.DataFrame):
     c = maestro.rename_columns(df= c, DictColumns= novosNomes)
 
     # Salvando no remoto
-    # dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_internacoes", isLocal=  False, if_exists= "append")
+    dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_internacoes", isLocal=  False, if_exists= "append")
     # Salvando no local
     dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "isa_internacoes", isLocal=  True, if_exists= "append")
 
@@ -43,7 +43,7 @@ def main():
             );
         """
         dataRequest.execute(create_query, isLocal= True)
-        # dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute(create_query, isLocal= False)
     else:
         # Drop local table
         dataRequest.execute("DELETE FROM isa_internacoes WHERE (paciente_id, id_enterprise) in (select distinct record_id, id_enterprise from patients_to_update)", isLocal= True)

@@ -57,7 +57,7 @@ def main():
     print(client.cluster.health())
     print(client.ping())
 
-    index_name = maestro.getELKIndexValue("suspeitas")
+    index_name = "suspeitas"
     
     client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
     
