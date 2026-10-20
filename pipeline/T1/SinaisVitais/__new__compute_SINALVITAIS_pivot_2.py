@@ -128,7 +128,7 @@ def main():
     
     append_query = f"""
         SELECT
-            record_id AS registro,
+            vs.record_id AS registro,
             acronym AS tipo_registro,
             collection_date as dthr_coleta,
             collection_date::date AS dia,

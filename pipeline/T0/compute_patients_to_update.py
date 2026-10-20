@@ -1,15 +1,15 @@
-from ImpararePackage import dataRequest
+from ImpararePackage import dataRequest, maestro
 
 def main():
     print("Executando compute_patients_to_update.py")
-    dataRequest.execute("""
+    dataRequest.execute(f"""
         CREATE TABLE IF NOT EXISTS pipeline_execution_log(
             id SERIAL PRIMARY KEY,
             execution_date DATE NOT NULL DEFAULT CURRENT_DATE
         );
 
         DROP TABLE IF EXISTS patients_to_update;
-        
+
         CREATE TABLE patients_to_update AS (
             SELECT 
                 DISTINCT 
@@ -22,6 +22,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id, h.id_enterprise 
@@ -29,6 +30,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id , h.id_enterprise 
@@ -36,6 +38,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id, h.id_enterprise
@@ -43,6 +46,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id, h.id_enterprise 
@@ -50,6 +54,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id, h.id_enterprise
@@ -57,6 +62,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id, h.id_enterprise
@@ -64,6 +70,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id, h.id_enterprise
@@ -71,6 +78,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
                 UNION ALL
                 SELECT 
                     DISTINCT record_id, h.id_enterprise
@@ -78,6 +86,7 @@ def main():
                 inner join hospitals h 
                     on e.id_hospital = h.id_hospital
                 WHERE e.created_at > coalesce((SELECT execution_date FROM pipeline_execution_log pel ORDER BY id DESC LIMIT 1), DATE('2022-01-01')) - interval '1 day'
+                    or 1 = {maestro.get_must_update_all_patients()}
             ) a
         );
 

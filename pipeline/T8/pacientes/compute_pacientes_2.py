@@ -153,6 +153,9 @@ def main():
                 pr.patient_name as nome,
                 pr.id_hospital
             FROM imparare2_pacientes_prepared as I
+            INNER JOIN patients_to_update ptu
+                ON I.registro = ptu.record_id
+                    AND I.id_enterprise = ptu.id_enterprise
             INNER JOIN (
                 select
                     prontuario,
@@ -172,7 +175,7 @@ def main():
 	        	inner join hospitals h
 	        		on pr.id_hospital = h.id_hospital
             ) as pr
-            	ON I.registro = pr."record_id"
+            	ON I.registro = pr.record_id
             		and pr.id_enterprise = i.id_enterprise 
             		and pr.rn = 1
         )

@@ -435,13 +435,13 @@ def main():
             id_enterprise
         FROM(
             SELECT
-                record_id AS registro,
+                p.record_id AS registro,
                 prescription_date AS prescription_date,
                 antibiotic AS atb,
-                FIRST_VALUE(dosage) OVER (PARTITION BY record_id, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "DOSE",
-                FIRST_VALUE(antibiotic_unity) OVER (PARTITION BY record_id, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "UNID",
-                FIRST_VALUE(frequency) OVER (PARTITION BY record_id, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "FREQUENCIA",
-                FIRST_VALUE(via) OVER (PARTITION BY record_id, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "VIA",
+                FIRST_VALUE(dosage) OVER (PARTITION BY p.record_id, h.id_enterprise, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "DOSE",
+                FIRST_VALUE(antibiotic_unity) OVER (PARTITION BY p.record_id, h.id_enterprise, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "UNID",
+                FIRST_VALUE(frequency) OVER (PARTITION BY p.record_id, h.id_enterprise, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "FREQUENCIA",
+                FIRST_VALUE(via) OVER (PARTITION BY p.record_id, h.id_enterprise, prescription_date, antibiotic ORDER BY prescription_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "VIA",
                 h.id_enterprise
             FROM prescriptions p
             inner join hospitals h

@@ -117,7 +117,7 @@ def main():
 
     append_query = f"""
         SELECT 
-            record_id as registro, 
+            er.record_id as registro, 
             laboratory_request_date,
             exam_lab_name,
             er.exam_result_description as valor,

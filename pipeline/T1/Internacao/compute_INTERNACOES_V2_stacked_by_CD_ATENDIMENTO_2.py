@@ -74,19 +74,22 @@ def main():
             id_enterprise
         FROM (
             SELECT DISTINCT 
-                record_id, 
+                a.record_id, 
                 attendance_id, 
                 attendance_date, 
                 hospital_discharge_date,
-                LAST_VALUE(health_insurance_name) OVER (PARTITION BY record_id, id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS nmconvenio,
-                LAST_VALUE(unity_code_and_description) OVER (PARTITION BY record_id, id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS unidade,
-                LAST_VALUE(hospitalization_type) OVER (PARTITION BY record_id, id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "TIPOINT_dku_lst",
-                LAST_VALUE(hospital_discharge_date) OVER (PARTITION BY record_id, id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS dt_alta_dku_lst,
-                LAST_VALUE(hospital_discharge_description) OVER (PARTITION BY record_id, id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "ALTA_dku_lst",
+                LAST_VALUE(health_insurance_name) OVER (PARTITION BY a.record_id, h.id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS nmconvenio,
+                LAST_VALUE(unity_code_and_description) OVER (PARTITION BY a.record_id, h.id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS unidade,
+                LAST_VALUE(hospitalization_type) OVER (PARTITION BY a.record_id, h.id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "TIPOINT_dku_lst",
+                LAST_VALUE(hospital_discharge_date) OVER (PARTITION BY a.record_id, h.id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS dt_alta_dku_lst,
+                LAST_VALUE(hospital_discharge_description) OVER (PARTITION BY a.record_id, h.id_enterprise, attendance_id, attendance_date ORDER BY created_at ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "ALTA_dku_lst",
                 h.id_enterprise
             FROM hospitalization a
             INNER JOIN hospitals h
                 ON a.id_hospital = h.id_hospital
+            INNER JOIN patients_to_update ptu
+                ON a.record_id = ptu.record_id
+                    AND h.id_enterprise = ptu.id_enterprise
             WHERE a.id_hospital IS NOT NULL
         )
         GROUP BY record_id, id_enterprise, attendance_id, attendance_date

@@ -42,48 +42,24 @@ def main():
         dataRequest.execute(create_query)
 
     append_query = f"""
-        WITH cirurgias_4_1 AS (
-            SELECT 
-                created_at, 
-                record_id, 
-                attendance_id, 
-                attendance_type, 
-                provider_name, 
-                DATE_TRUNC('minute', creation_date)::timestamp as creation_date, 
-                DATE_TRUNC('minute', close_date)::timestamp as close_date,
-                surgery_description,
-                h.id_enterprise
-            FROM surgeries_rgo
-            INNER JOIN hospitals h 
-                ON surgeries_rgo.id_hospital = h.id_hospital
-            -- TODO: add inner join em patients to update assim filtrando dados somente de quem irá atualizar
-        ), cirurgias_4_2 AS (
-            SELECT DISTINCT ON(record_id, id_enterprise, attendance_id, provider_name, creation_date, close_date)
-                record_id,
-                attendance_id,
-                attendance_type,
-                provider_name,
-                creation_date,
-                close_date,
-                created_at,
-                surgery_description,
-                id_enterprise
-            FROM cirurgias_4_1
-            ORDER BY record_id, id_enterprise, attendance_id, provider_name, creation_date, close_date, created_at DESC
-        )
-        SELECT 
-            record_id,
-            attendance_id,
-            attendance_type,
-            creation_date as dthr_criacao,
-            creation_date:: date as dt_criacao,
-            close_date as dthr_fim,
+        SELECT DISTINCT ON(record_id, id_enterprise, attendance_id, provider_name, creation_date, close_date)
+            rgo.record_id, 
+            attendance_id, 
+            attendance_type, 
             STRING_AGG(provider_name, ', ' order by created_at) AS provider_name,
+            creation_date::date as dt_criacao,
+            creation_date as dthr_criacao, 
+            close_date as dthr_fim,
             surgery_description,
-            id_enterprise,
+            h.id_enterprise,
             COUNT(*) AS count
-        FROM cirurgias_4_2
-        GROUP BY record_id, id_enterprise, attendance_id, attendance_type, creation_date, close_date, surgery_description;
+        FROM surgeries_rgo rgo
+        INNER JOIN hospitals h 
+            ON rgo.id_hospital = h.id_hospital
+        INNER JOIN patients_to_update ptu
+            ON rgo.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise
+        GROUP BY rgo.record_id, h.id_enterprise, attendance_id, attendance_type, creation_date, close_date, surgery_description
     """
     df_iterator = dataRequest.get_data(queryText= append_query, chunck= 2000)
     

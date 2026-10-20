@@ -149,7 +149,7 @@ def main():
         dataRequest.execute("DELETE FROM isa_infeccao WHERE (paciente_id, id_enterprise) in (select distinct record_id, id_enterprise from patients_to_update)", isLocal= True)
         
         #Busca IDS para deleção
-        df = dataRequest.get_data(queryText= f"SELECT distinct record_id::text FROM patients_to_update", chunck= None)
+        df = dataRequest.get_data(queryText= f"SELECT distinct record_id::text, id_enterprise FROM patients_to_update", chunck= None)
 
         ids = ""
         for i in range(len(df)):

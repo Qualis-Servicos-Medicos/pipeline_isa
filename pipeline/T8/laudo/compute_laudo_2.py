@@ -176,7 +176,10 @@ def main():
             h.id_hospital
         FROM xrays_reports xr
 		inner join hospitals h
-		    on h.id_hospital = xr.id_hospital;
+		    on h.id_hospital = xr.id_hospital
+        INNER JOIN patients_to_update ptu
+            ON xr.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise;
     """
     
     df_iterator = dataRequest.get_data(queryText= append_query)

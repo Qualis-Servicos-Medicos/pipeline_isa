@@ -60,7 +60,7 @@ def main():
 
     append_query = f"""
         SELECT 
-            record_id, 
+            surgeries_rgo_names.record_id, 
             attendance_id,
             surgery_description, 
             DATE_TRUNC('minute', "surgery_start_date")::timestamp as dthr_procedimento, 
@@ -72,8 +72,10 @@ def main():
         FROM surgeries_rgo_names
         INNER JOIN hospitals h 
             ON surgeries_rgo_names.id_hospital = h.id_hospital
-        -- TODO: add inner join em patients to update assim filtrando dados somente de quem irá atualizar
-        GROUP BY record_id, 
+        INNER JOIN patients_to_update ptu
+            ON surgeries_rgo_names.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise
+        GROUP BY surgeries_rgo_names.record_id, 
                 h.id_enterprise,
                 attendance_id, 
                 surgery_description,

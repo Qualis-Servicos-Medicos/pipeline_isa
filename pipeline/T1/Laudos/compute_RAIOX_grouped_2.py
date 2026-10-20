@@ -46,6 +46,9 @@ def main():
         FROM xrays_reports AS RX
         JOIN hospitals AS h
             ON RX.id_hospital = h.id_hospital
+        INNER JOIN patients_to_update ptu
+            ON RX.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise
         WHERE RX.xray_content IS NOT NULL
         GROUP BY RX.record_id , date(RX.xray_request_date), h.id_enterprise 
     """

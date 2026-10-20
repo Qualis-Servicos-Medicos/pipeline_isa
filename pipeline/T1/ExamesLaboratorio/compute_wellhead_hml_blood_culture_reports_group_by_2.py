@@ -6,7 +6,7 @@ def main():
         DROP TABLE IF EXISTS imparare2_wellhead_hml_blood_culture_prepared;
         CREATE UNLOGGED TABLE imparare2_wellhead_hml_blood_culture_prepared AS 
             SELECT DISTINCT 
-                record_id AS registro,
+                bcr.record_id AS registro,
                 exam_lab_name AS exame,
                 attendance_type as tipo_atendimento, 
                 laboratory_request_id AS cd_exa_lab, 
@@ -25,8 +25,11 @@ def main():
                 h.id_enterprise
             FROM blood_culture_reports bcr
             INNER JOIN hospitals h 
-                ON bcr.id_hospital = h.id_hospital;
-        
+                ON bcr.id_hospital = h.id_hospital
+            INNER JOIN patients_to_update ptu
+                ON bcr.record_id = ptu.record_id
+                    AND h.id_enterprise = ptu.id_enterprise;
+
         CREATE INDEX IF NOT EXISTS imparare2_wellhead_hml_blood_culture_prepared_idx_1 ON imparare2_wellhead_hml_blood_culture_prepared(id_enterprise, registro, date(dthr_pedido));
     """)
 

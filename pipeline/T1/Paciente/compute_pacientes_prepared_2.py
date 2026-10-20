@@ -37,12 +37,12 @@ def main():
             id_enterprise
         FROM (
             SELECT 
-                record_id, 
+                pr.record_id, 
                 sex, 
                 TO_CHAR(birthdate,'DD/MM/YYYY') AS birthdate, 
-                LAST_VALUE(patient_name) OVER (PARTITION BY record_id, h.id_enterprise ORDER BY record_id, h.id_enterprise ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS patient_name,
-                LAST_VALUE(sex) OVER (PARTITION BY record_id, h.id_enterprise ORDER BY record_id, h.id_enterprise ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "SEXO_dku_lst",
-                LAST_VALUE(birthdate) OVER (PARTITION BY record_id, h.id_enterprise ORDER BY record_id, h.id_enterprise  ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS birthdate_dku_lst,
+                LAST_VALUE(patient_name) OVER (PARTITION BY pr.record_id, h.id_enterprise ORDER BY pr.record_id, h.id_enterprise ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS patient_name,
+                LAST_VALUE(sex) OVER (PARTITION BY pr.record_id, h.id_enterprise ORDER BY pr.record_id, h.id_enterprise ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "SEXO_dku_lst",
+                LAST_VALUE(birthdate) OVER (PARTITION BY pr.record_id, h.id_enterprise ORDER BY pr.record_id, h.id_enterprise  ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS birthdate_dku_lst,
                 h.id_enterprise
             FROM patients_records pr
             JOIN hospitals h

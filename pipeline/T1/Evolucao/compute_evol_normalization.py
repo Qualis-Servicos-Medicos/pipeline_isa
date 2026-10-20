@@ -46,7 +46,7 @@ def main():
 
     append_query = """
         SELECT 
-            record_id AS registro,
+            e.record_id AS registro,
             provider_profile AS perfil, 
             evolution_date AS dthr_evolucao,
             evolution_date::date as data_dia,
@@ -57,11 +57,13 @@ def main():
         FROM evolutions e
         inner join hospitals h
             ON e.id_hospital = h.id_hospital
-        -- TODO: add inner join em patients to update assim filtrando dados somente de quem irá atualizar
-        GROUP BY record_id, id_enterprise, provider_profile, evolution_date, unity_code_and_description, attendance_type
+        inner join patients_to_update ptu
+            ON e.record_id = ptu.record_id
+                AND h.id_enterprise = ptu.id_enterprise
+        GROUP BY e.record_id, h.id_enterprise, provider_profile, evolution_date, unity_code_and_description, attendance_type
     """
 
-    df_iterator = dataRequest.get_data(queryText= append_query, chunck= 2000)
+    df_iterator = dataRequest.get_data(queryText= append_query, chunck= 10000)
     with Pool(processes= cpu_count()) as pool:
         for _ in pool.imap_unordered(worker, df_iterator):
             pass
