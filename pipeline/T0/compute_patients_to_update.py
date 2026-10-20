@@ -2,12 +2,14 @@ from ImpararePackage import dataRequest, maestro
 
 def main():
     print("Executando compute_patients_to_update.py")
-    dataRequest.execute(f"""
+    dataRequest.execute("""
         CREATE TABLE IF NOT EXISTS pipeline_execution_log(
             id SERIAL PRIMARY KEY,
             execution_date DATE NOT NULL DEFAULT CURRENT_DATE
         );
+    """)
 
+    dataRequest.execute(f"""    
         DROP TABLE IF EXISTS patients_to_update;
 
         CREATE TABLE patients_to_update AS (
