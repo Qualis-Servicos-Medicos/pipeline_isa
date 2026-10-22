@@ -44,7 +44,7 @@ def transpose(row):
         row['leucocitos'] = valor
     elif tipo == 'RDW':
         row['rdw'] = valor
-    elif 'SEGMENTADO' in tipo and 'HEMOGRAMA' in nome:
+    elif ('SEGMENTADO' in tipo or 'NEUTROFILO' in tipo) and 'HEMOGRAMA' in nome:
         row['neutrofilo'] = valor
     elif ('RESULTADO' in tipo or 'PCR' in tipo) and 'PROTEINA C REATIVA' in nome:
         row['pcr'] = valor
