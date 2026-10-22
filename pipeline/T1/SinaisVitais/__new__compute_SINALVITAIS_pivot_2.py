@@ -17,6 +17,7 @@ def worker(c: pd.DataFrame):
     c = pd.concat([c, dummies], axis=1)
 
     vital_sinal_translator = {
+        #trocar para busca com regex?
         # novos e duvidosos
         "PEEP" : "PEEP",
         "GLICEMIA CAPILAR" : "HGT",
@@ -59,6 +60,7 @@ def worker(c: pd.DataFrame):
         "P.A.D." : "PAD",
         "P.A. DIASTOLICA" : "PAD",
     }
+    #fazer dicionário de uni_medida?
     c["tipo_registro"] = c["tipo_registro"].map(vital_sinal_translator).fillna("drop")
 
     # Removendo outliers

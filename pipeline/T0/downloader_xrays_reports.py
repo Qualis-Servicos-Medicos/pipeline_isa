@@ -58,7 +58,7 @@ def main():
     dataRequest.execute(create_index_local)
     # print(query_downloader)
 
-    df = dataRequest.get_data(queryText= query_dowloader, chunck= 10000, isWellheadEngine=True)
+    df = dataRequest.get_data(queryText= query_dowloader, chunck= 100000, isWellheadEngine=True)
     count = 0
     for c in df:
         count += len(c)

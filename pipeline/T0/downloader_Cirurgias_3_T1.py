@@ -63,7 +63,7 @@ def main():
     create_index_local = """CREATE INDEX IF NOT EXISTS idx_surgeries_rgo_names_created_at_record_id ON surgeries_rgo_names (created_at, record_id);"""
     dataRequest.execute(create_index_local)
     # print(query_downloader)
-    df = dataRequest.get_data(queryText= query_downloader, chunck= 10000, isWellheadEngine=True)
+    df = dataRequest.get_data(queryText= query_downloader, chunck= 100000, isWellheadEngine=True)
     count = 0
     with Pool(4) as pool:
         for result in pool.imap_unordered(worker_uploader, df):

@@ -68,7 +68,7 @@ def main():
     create_index_local = """CREATE INDEX IF NOT EXISTS idx_blood_culture_reports_created_at_record_id ON blood_culture_reports (created_at, record_id);"""
     dataRequest.execute(create_index_local)
 
-    df = dataRequest.get_data(queryText= query_dowloader, chunck= 10000, isWellheadEngine=True)
+    df = dataRequest.get_data(queryText= query_dowloader, chunck= 100000, isWellheadEngine=True)
 
     count = 0
     with Pool(4) as pool:

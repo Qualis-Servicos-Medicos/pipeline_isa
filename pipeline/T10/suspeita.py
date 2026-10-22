@@ -42,7 +42,8 @@ def main():
             pred_comunitaria,
             prob_perc_comunitaria AS comunitaria,
             pred_iras,
-            prob_perc_iras AS iras
+            prob_perc_iras AS iras,
+            isa_suspeita.id_enterprise
         FROM isa_suspeita
         LEFT JOIN isa_pacientes 
             ON isa_suspeita.paciente_id = isa_pacientes.id
@@ -83,6 +84,7 @@ def main():
                 "properties": {
                     "id": {"type": "keyword", "index": False, "doc_values": False},
                     "paciente_id": {"type": "integer"},
+                    "id_enterprise": {"type": "short"},
                     "nome": {"type": "text", "index": False},
                     "dt_infeccao": {"type": "date", "index": False, "doc_values": False},
                     "prob_perc": {"type": "float", "index": False, "doc_values": False},

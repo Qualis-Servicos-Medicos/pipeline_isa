@@ -26,9 +26,9 @@ def main():
     query_dowloader = f"""
         SELECT DISTINCT
         {', '.join(select_fields)}
-    FROM exams_reports
-    WHERE laboratory_request_date IS NOT NULL
-    	AND laboratory_request_delivery_date IS NOT NULL
+        FROM exams_reports
+        WHERE laboratory_request_date IS NOT NULL
+            AND laboratory_request_delivery_date IS NOT NULL
     """
 
     replace = True
@@ -63,8 +63,9 @@ def main():
     dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
     create_index_local = """CREATE INDEX IF NOT EXISTS idx_exams_reports_created_at_record_id ON exams_reports (created_at, record_id);"""
     dataRequest.execute(create_index_local)
+    print(f"Query de download: {query_dowloader}")
 
-    df = dataRequest.get_data(queryText= query_dowloader, chunck= 10000, isWellheadEngine=True)
+    df = dataRequest.get_data(queryText= query_dowloader, chunck= 100000, isWellheadEngine=True)
     count = 0
     with Pool(4) as pool:
         for result in pool.imap_unordered(worker_uploader, df):

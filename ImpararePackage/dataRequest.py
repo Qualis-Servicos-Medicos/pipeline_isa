@@ -10,7 +10,7 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer
 from elasticsearch import Elasticsearch
 from sqlalchemy.pool import NullPool
 
-chunckPadrao = 2000
+chunckPadrao = 10_000
 
 
 ELASTICSEARCH_LOGIN = "elastic"

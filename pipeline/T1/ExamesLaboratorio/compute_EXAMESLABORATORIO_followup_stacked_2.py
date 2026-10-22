@@ -1,10 +1,74 @@
 from ImpararePackage import dataRequest, maestro
+import pandas as pd
+import re
+import unicodedata
+from multiprocessing import Pool, cpu_count
 
+def worker(c: pd.DataFrame):
+
+    def normalize_text(value):
+        if pd.isna(value):
+            return ""
+        text = str(value)
+        text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+        text = text.upper()
+        text = re.sub(r'[^A-Z0-9\s/\-]', ' ', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+
+    def normalize_item_exame(value):
+        text = normalize_text(value)
+        if not text:
+            return 'NAO_INFORMADO'
+
+        if re.search(r'LEUC', text):
+            return 'LEUCOCITOS'
+        if re.search(r'SEGMENT|NEUTRO', text):
+            return 'SEGMENTADO NEUTROFILO'
+        if re.search(r'BACTERIOL', text):
+            return 'BACTERIOLÓGICO'
+        if re.search(r'BACTERIOS', text):
+            return 'BACTERIOSCÓPICO'
+        if re.search(r'OBSERVACAO.*MATERIAL', text):
+            return 'OBSERVACAO DO MATERIAL'
+        if re.search(r'OBSERVACAO.*COLONIA', text):
+            return 'OBSERVACAO DA COLONIA'
+        if re.search(r'MATERIAL', text):
+            return 'MATERIAL'
+
+        return text
+
+    c['exame'] = c['exame'].apply(normalize_text)
+    c['item_exame'] = c['item_exame'].apply(normalize_item_exame)
+    if 'ds_resultado' in c.columns:
+        c['ds_resultado'] = c['ds_resultado'].fillna('').apply(normalize_text)
+    dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "imparare2_exameslaboratorio_followup_stacked", if_exists= "append", isLocal= True)
+
+
+#create separado e worker para normalização - item_exame e exame, ao menos. campo resultado precisa aém de normalização de manejo do sinal (, ou .)
 def main():
-    dataRequest.execute(f"""
-        SET synchronous_commit = off;
-        DROP TABLE IF EXISTS imparare2_exameslaboratorio_followup_stacked;
-        CREATE UNLOGGED TABLE imparare2_exameslaboratorio_followup_stacked AS
+    replace = True
+
+    if replace:
+        create_query = """
+            DROP TABLE IF EXISTS imparare2_exameslaboratorio_followup_stacked;
+            CREATE UNLOGGED TABLE imparare2_exameslaboratorio_followup_stacked (
+                id TEXT,
+                registro INTEGER,
+                exame TEXT,
+                dthr_pedido TIMESTAMP,
+                dthr_entrega TIMESTAMP,
+                item_exame TEXT,
+                ds_resultado TEXT,
+                tipo_atendimento TEXT,
+                id_enterprise SMALLINT,
+                gmr SMALLINT
+            );
+        """
+        dataRequest.execute(create_query)
+        
+    append_query = f"""
         SELECT 
             DISTINCT * 
         FROM (
@@ -97,7 +161,13 @@ def main():
             FROM imparare2_wellhead_hml_blood_culture_prepared p
             where material_amostra is not null
         ) a;
-    """)
+    """
 
+    df_iterator = dataRequest.get_data(queryText= append_query, chunck= 20000)
+        
+    with Pool(processes=cpu_count()) as pool:
+        for _ in pool.imap_unordered(worker, df_iterator):
+            pass
+    
 if __name__ == "__main__":
     main()
