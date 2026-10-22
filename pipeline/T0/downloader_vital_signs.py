@@ -15,7 +15,7 @@ COLUNAS_DOWNLOAD = {
     "measurement_unity": "text",
     "provider_profile": "text",
     "attendance_type": "text",
-    "id_hospital": "integer"
+    "id_hospital": "SMALLINT"
 }
 
 def main():
@@ -36,6 +36,7 @@ def main():
     except Exception:
         print(f"Erro na busca da ultima data de sinais vitais em {TABELA_DESTINO}, baixando tudo novamente")
 
+    sql_antes = None
     if last_date is not None and pd.notna(last_date):
         query_downloader += f" AND date(created_at) > '{last_date}'"
         print(f"Buscando todos os dados novos desde: {last_date} (exclusive)")

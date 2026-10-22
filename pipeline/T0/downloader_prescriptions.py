@@ -1,73 +1,57 @@
 from ImpararePackage import dataRequest
-from ImpararePackage import maestro
 import pandas as pd
-from multiprocessing import Pool, cpu_count
+import time
 
-def worker_uploader(c: pd.DataFrame) -> int:
-    dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "prescriptions", if_exists= "append")
-    return len(c)
+TABELA_DESTINO = "prescriptions_V2"
+TABELA_ORIGEM = "prescriptions"
+
+COLUNAS_DOWNLOAD = {
+    "record_id": "integer",
+    "created_at": "date",
+    "prescription_date": "timestamp",
+    "antibiotic": "text",
+    "dosage": "float",
+    "antibiotic_unity": "text",
+    "frequency": "text",
+    "via": "text",
+    "id_hospital": "SMALLINT"
+}
 
 def main():
-    print("Inicinado downloader_prescriptions")
-    colunas_download = {
-        "record_id": "integer",
-        "created_at": "date",
-        "prescription_date": "timestamp",
-        "antibiotic": "text",
-        "dosage": "float",
-        "antibiotic_unity": "text",
-        "frequency": "text",
-        "via": "text",
-        "id_hospital": "integer"
-    }
+    print(f"Iniciando downloader_{TABELA_ORIGEM}")
+    inicio = time.perf_counter()
     query_downloader = f"""
         SELECT
-            {', '.join([f'{k}::{v}' for k, v in colunas_download.items()])}
-        FROM prescriptions
+            {', '.join([f'{k}::{v}' for k, v in COLUNAS_DOWNLOAD.items()])}
+        FROM {TABELA_ORIGEM}
     """
 
-    replace = True
+    last_date = None
     try:
-        query_last_dowloaded_date = """
-            SELECT 
-                created_at 
-            FROM prescriptions
-            ORDER BY created_at DESC
-            LIMIT 1
-        """
-        df = dataRequest.get_data(queryText= query_last_dowloaded_date, chunck= None)
-
+        df = dataRequest.get_data(queryText= f"SELECT max(created_at) AS created_at FROM {TABELA_DESTINO}", chunck= None)
         last_date = df.iloc[0]["created_at"]
-        if last_date is not None and not pd.isna(last_date):
-            query_downloader += f" WHERE date(created_at) > '{last_date}'"
-            print(f"Buscando todos os dados novos desde: {last_date}")
-            replace = False
-    except:
-        print(f"Erro na busca da ultima data da prescrição, baixando tudo novamente")
+    except Exception:
+        print(f"Erro na busca da ultima data de sinais vitais em {TABELA_DESTINO}, baixando tudo novamente")
 
-    if replace:
-        replace_query = f"""
-            DROP TABLE IF EXISTS prescriptions;
-            CREATE UNLOGGED TABLE prescriptions (
-                {', '.join([f'{k} {v}' for k, v in colunas_download.items()])}
+    sql_antes = None
+    if last_date is not None and pd.notna(last_date):
+        query_downloader += f" AND date(created_at) > '{last_date}'"
+        print(f"Buscando todos os dados novos desde: {last_date} (exclusive)")
+        create_index_wellhead = f"""CREATE INDEX IF NOT EXISTS idx_{TABELA_ORIGEM}_created_at_record_id ON {TABELA_ORIGEM} ((created_at::date), record_id);"""
+        dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
+    else:
+        sql_antes = f"""
+            DROP TABLE IF EXISTS {TABELA_DESTINO};
+            CREATE UNLOGGED TABLE {TABELA_DESTINO} (
+                {', '.join([f'{k} {v}' for k, v in COLUNAS_DOWNLOAD.items()])}
             );
         """
-        dataRequest.execute(replace_query)
 
-    create_index_wellhead = """CREATE INDEX IF NOT EXISTS idx_prescriptions_created_at_record_id ON prescriptions (id_hospital, (created_at::date), record_id);"""
-    dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
-    create_index_local = """CREATE INDEX IF NOT EXISTS idx_prescriptions_created_at_record_id ON prescriptions (created_at, record_id);"""
-    dataRequest.execute(create_index_local)
+    sql_depois = f"""CREATE INDEX IF NOT EXISTS idx_{TABELA_DESTINO}_created_at_record_id ON {TABELA_DESTINO} (created_at, record_id);"""
 
-    df = dataRequest.get_data(queryText= query_downloader, chunck= 100000, isWellheadEngine=True)
-    count = 0
-    with Pool(4) as pool:
-        for result in pool.imap_unordered(worker_uploader, df):
-            count += result
+    leitor = dataRequest.copy_from_wellhead_to_local_with_stream(query_downloader, TABELA_DESTINO, sql_antes, sql_depois)
 
-    print(f"Baixado no total: {count} linhas em prescriptions - downloader_prescriptions")
-    
+    print(f"Baixado no total: {leitor.linhas} linhas em {TABELA_DESTINO} em {time.perf_counter() - inicio:.1f}s - downloader_vital_signs")
+
 if __name__ == "__main__":
     main()
-
-

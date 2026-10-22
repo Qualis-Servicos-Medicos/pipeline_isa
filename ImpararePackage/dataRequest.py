@@ -177,7 +177,7 @@ class LeitorComProgresso:
         self.arquivo.close()
 
 BLOCO = 1 << 20
-def copy_from_wellhead_to_local_with_stream(query_origem: str, tabela_destino: str, sql_antes: str, sql_depois: str) -> LeitorComProgresso:
+def copy_from_wellhead_to_local_with_stream(query_origem: str, tabela_destino: str, sql_antes: str | None, sql_depois: str | None) -> LeitorComProgresso:
     """
     Liga COPY (query_origem) TO STDOUT no wellhead direto em COPY tabela_destino FROM STDIN no banco local
     através de um pipe, sem passar por pandas. sql_antes, o COPY e sql_depois rodam numa única transação
@@ -206,14 +206,16 @@ def copy_from_wellhead_to_local_with_stream(query_origem: str, tabela_destino: s
     leitor = LeitorComProgresso(os.fdopen(r_fd, "rb", buffering= BLOCO))
     try:
         with conn.cursor() as cur:
-            cur.execute(sql_antes)
+            if sql_antes is not None:
+                cur.execute(sql_antes)
             cur.copy_expert(f"COPY {tabela_destino} FROM STDIN", leitor, size= BLOCO)
             # o EOF também chega quando o produtor falha no meio, então só confirma depois de checar o erro dele
             thread.join()
             if erros:
                 raise erros[0]
             print(f"Transferência concluída: {leitor.resumo()}")
-            cur.execute(sql_depois)
+            if sql_depois is not None:
+                cur.execute(sql_depois)
         conn.commit()
     finally:
         # sem commit o close faz rollback
