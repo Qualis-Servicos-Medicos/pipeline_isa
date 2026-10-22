@@ -1,5 +1,5 @@
 from typing import Generator
-
+import time
 import sqlalchemy as sa
 import os
 import pandas as pd
@@ -9,6 +9,8 @@ import numpy as np
 from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer
 from elasticsearch import Elasticsearch
 from sqlalchemy.pool import NullPool
+import os
+import threading
 
 chunckPadrao = 10_000
 
@@ -139,3 +141,83 @@ def execute(queryText:str, schema: str= "public", isWellheadEngine: bool = False
         with engine.connect() as connection:
                 connection.execute(sa.text(queryText))
                 connection.commit()
+
+class LeitorComProgresso:
+    """Repassa o stream do COPY TO (wellhead) para o COPY FROM (local) contando linhas e bytes."""
+
+    def __init__(self, arquivo, intervalo_log: float = 5.0):
+        self.arquivo = arquivo
+        self.intervalo_log = intervalo_log
+        self.linhas: int = 0
+        self.bytes = 0
+        self.inicio = time.perf_counter()
+        self.ultimo_log = self.inicio
+        self.primeiro_byte = None
+
+    def read(self, size: int = -1) -> bytes:
+        dados = self.arquivo.read(size)
+        agora = time.perf_counter()
+        if dados and self.primeiro_byte is None:
+            self.primeiro_byte = agora - self.inicio
+            print(f"Primeiro byte recebido após {self.primeiro_byte:.1f}s")
+        # no formato texto do COPY as quebras de linha dentro dos valores vêm escapadas, então cada \n é uma linha
+        self.linhas += dados.count(b"\n")
+        self.bytes += len(dados)
+        if agora - self.ultimo_log >= self.intervalo_log:
+            self.ultimo_log = agora
+            print(self.resumo())
+        return dados
+
+    def resumo(self) -> str:
+        decorrido = time.perf_counter() - self.inicio
+        mb = self.bytes / 1e6
+        return f"{self.linhas:,} linhas | {mb:,.1f} MB | {decorrido:.1f}s | {mb / decorrido:.1f} MB/s | {self.linhas / decorrido:,.0f} linhas/s"
+
+    def close(self):
+        self.arquivo.close()
+
+BLOCO = 1 << 20
+def copy_from_wellhead_to_local_with_stream(query_origem: str, tabela_destino: str, sql_antes: str, sql_depois: str) -> LeitorComProgresso:
+    """
+    Liga COPY (query_origem) TO STDOUT no wellhead direto em COPY tabela_destino FROM STDIN no banco local
+    através de um pipe, sem passar por pandas. sql_antes, o COPY e sql_depois rodam numa única transação
+    no destino: se qualquer parte falhar, a tabela local fica exatamente como estava.
+    """
+    conn = LOCALDATABSE.raw_connection()
+    r_fd, w_fd = os.pipe()
+    erros = []
+
+    def produtor():
+        try:
+            with os.fdopen(w_fd, "wb", buffering= BLOCO) as escrita:
+                conn_origem = ENGINEWELLHEAD.raw_connection()
+                try:
+                    with conn_origem.cursor() as cur:
+                        # garante datas em ISO no texto do COPY, independente da configuração do servidor de origem
+                        cur.execute("SET LOCAL datestyle TO ISO")
+                        cur.copy_expert(f"COPY ({query_origem}) TO STDOUT", escrita)
+                finally:
+                    conn_origem.close()
+        except BaseException as e:
+            erros.append(e)
+
+    thread = threading.Thread(target= produtor, daemon= True)
+    thread.start()
+    leitor = LeitorComProgresso(os.fdopen(r_fd, "rb", buffering= BLOCO))
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql_antes)
+            cur.copy_expert(f"COPY {tabela_destino} FROM STDIN", leitor, size= BLOCO)
+            # o EOF também chega quando o produtor falha no meio, então só confirma depois de checar o erro dele
+            thread.join()
+            if erros:
+                raise erros[0]
+            print(f"Transferência concluída: {leitor.resumo()}")
+            cur.execute(sql_depois)
+        conn.commit()
+    finally:
+        # sem commit o close faz rollback
+        leitor.close()
+        conn.close()
+    
+    return leitor
