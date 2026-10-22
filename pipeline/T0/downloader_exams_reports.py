@@ -24,7 +24,7 @@ def main():
     select_fields = [f"{v[0]}::{v[1]} AS {k}" for k, v in colunas_download.items()]
     
     query_dowloader = f"""
-        SELECT DISTINCT
+        SELECT
         {', '.join(select_fields)}
         FROM exams_reports
         WHERE laboratory_request_date IS NOT NULL

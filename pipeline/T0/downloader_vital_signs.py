@@ -21,7 +21,7 @@ def main():
     print("Iniciando downloader_vital_signs_v2")
     inicio = time.perf_counter()
     query_downloader = f"""
-        SELECT -- DISTINCT
+        SELECT
             {', '.join([f'{k}::{v}' for k, v in COLUNAS_DOWNLOAD.items()])}
         FROM vital_signs
         WHERE value IS NOT NULL
