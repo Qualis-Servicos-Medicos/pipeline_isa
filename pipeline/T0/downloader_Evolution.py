@@ -3,7 +3,7 @@ import pandas as pd
 import time
 
 # Tabela separada para rodar lado a lado com o downloader_vital_signs e comparar os dois
-TABELA_DESTINO = "evolutions_v2"
+TABELA_DESTINO = "evolutions"
 TABELA_ORIGEM = "evolutions"
 
 COLUNAS_DOWNLOAD = {
