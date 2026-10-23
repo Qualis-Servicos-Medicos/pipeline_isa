@@ -1511,35 +1511,113 @@ def wait_for_index_health(client, index_name: str, status: str = "yellow", timeo
     except Exception as e:
         print(f"⚠️ Timeout aguardando index '{index_name}' ficar '{status}': {e}")
 
+def _resumo_falha_bulk(info: dict) -> str:
+    """Motivo de uma falha do parallel_bulk sem o conteúdo do documento -- o 'info' original
+    traz o documento inteiro (texto clínico, prontuário), que não deve ir para o log."""
+    detalhe = next(iter(info.values()), {}) if isinstance(info, dict) else {}
+    status = detalhe.get("status")
+    exc = detalhe.get("exception")
+    if exc is not None:
+        # a requisição do lote inteiro foi recusada antes de chegar ao índice (rede, proxy, WAF...)
+        # e todos os documentos do lote recebem o mesmo erro; o header Server diz quem recusou
+        headers = getattr(getattr(exc, "meta", None), "headers", None) or {}
+        servidor = headers.get("Server") or headers.get("server")
+        return f"status={status} lote recusado: {type(exc).__name__}" + (f" (Server: {servidor})" if servidor else "")
+    erro = detalhe.get("error")
+    if isinstance(erro, dict):
+        erro = f"{erro.get('type')}: {str(erro.get('reason'))[:200]}"
+    return f"status={status} {erro}"
+
+def _ref_documento_bulk(action: dict) -> str:
+    source = action.get("_source") or {}
+    return ",".join(f"{k}={source[k]}" for k in ("id", "paciente_id", "id_enterprise") if source.get(k) is not None) or "sem id"
+
+def _agrupar_falhas_bulk(failed: list) -> dict:
+    """{motivo: [identificação de cada documento]} -- para logar uma linha por motivo, não por documento."""
+    falhas_por_motivo: dict = {}
+    for action, info in failed:
+        falhas_por_motivo.setdefault(_resumo_falha_bulk(info), []).append(_ref_documento_bulk(action))
+    return falhas_por_motivo
+
+def _enviar_bulk(client, actions: list, thread_count: int) -> list:
+    """Envia via parallel_bulk e devolve [(action, info)] só dos documentos que falharam."""
+    results = parallel_bulk(
+        client,
+        actions,
+        thread_count=thread_count,
+        raise_on_error=False,
+        raise_on_exception=False
+    )
+    return [(action, info) for action, (success, info) in zip(actions, results) if not success]
+
+def _lote_recusado_403(info: dict) -> bool:
+    detalhe = next(iter(info.values()), {}) if isinstance(info, dict) else {}
+    return detalhe.get("exception") is not None and detalhe.get("status") == 403
+
+def _isolar_recusados_403(client, failed: list, context: str, max_reenvios: int = 64) -> list:
+    """Um 403 na requisição (ex.: WAF da AWS barrando o conteúdo de algum documento) derruba o lote
+    inteiro, ~500 documentos, por causa de um só. Divide os recusados ao meio e reenvia até isolar
+    os que causam a recusa, para o resto ser indexado. Reenviar não duplica nada: um lote recusado
+    nunca chegou ao índice. max_reenvios limita o custo caso o 403 seja geral (bloqueio de IP,
+    credencial) e não de conteúdo. Devolve as falhas que sobraram."""
+    recusados = [(a, i) for a, i in failed if _lote_recusado_403(i)]
+    if not recusados:
+        return failed
+
+    sobras = [(a, i) for a, i in failed if not _lote_recusado_403(i)]
+    sobras_iniciais = len(sobras)
+    fila = [recusados]
+    reenvios = sozinhos = 0
+    while fila:
+        grupo = fila.pop()
+        if len(grupo) == 1 or reenvios >= max_reenvios:
+            sozinhos += len(grupo) == 1
+            sobras.extend(grupo)
+            continue
+        meio = len(grupo) // 2
+        for metade in (grupo[:meio], grupo[meio:]):
+            reenvios += 1
+            falhas = _enviar_bulk(client, [a for a, _ in metade], thread_count=1)
+            sobras.extend((a, i) for a, i in falhas if not _lote_recusado_403(i))
+            ainda_recusados = [(a, i) for a, i in falhas if _lote_recusado_403(i)]
+            if ainda_recusados:
+                fila.append(ainda_recusados)
+
+    indexados = len(recusados) - (len(sobras) - sobras_iniciais)
+    if indexados == 0 and reenvios >= max_reenvios:
+        print(f"🔎 {context}: {len(recusados)} docs recusados com 403 e nenhuma parte passou em {reenvios} reenvios -- parece bloqueio geral (IP, credencial), não um documento específico")
+    else:
+        print(f"🔎 {context}: {len(recusados)} docs em lotes recusados com 403 -> {indexados} indexados após dividir o lote, {sozinhos} recusados mesmo sozinhos ({reenvios} reenvios)")
+    return sobras
+
 def bulk_upload_with_retry(client, actions: list, context: str = "", max_retries: int = 2, thread_count: int = 1) -> Tuple[int, int]:
     """Executa parallel_bulk retentando os documentos que falharem, em vez de descartá-los silenciosamente.
+
+    Se ainda sobrar lote recusado com 403 depois das retentativas, divide o lote para indexar os
+    documentos inocentes e isolar os que causam a recusa (ver _isolar_recusados_403).
+
+    Os logs de falha trazem só o motivo e a identificação (id, paciente_id, id_enterprise) dos
+    documentos, nunca o conteúdo.
 
     Retorna (total_sucesso, total_falha_definitiva).
     """
     total = len(actions)
     pending = actions
     for attempt in range(max_retries + 1):
-        failed = []
-        results = parallel_bulk(
-            client,
-            pending,
-            thread_count=thread_count,
-            raise_on_error=False,
-            raise_on_exception=False
-        )
-        for action, (success, info) in zip(pending, results):
-            if not success:
-                failed.append((action, info))
-
+        failed = _enviar_bulk(client, pending, thread_count)
         if not failed:
             return total, 0
 
         if attempt < max_retries:
-            print(f"⚠️ {len(failed)} documentos falharam em {context}, retentativa {attempt + 1}/{max_retries}...")
+            motivos = "; ".join(f"{motivo} ({len(refs)} docs)" for motivo, refs in _agrupar_falhas_bulk(failed).items())
+            print(f"⚠️ {len(failed)} documentos falharam em {context}, retentativa {attempt + 1}/{max_retries}... motivos: {motivos}")
             time.sleep(5 * (attempt + 1))
             pending = [action for action, _ in failed]
-        else:
-            for _, info in failed:
-                print(f"🔴🔴🔴 Documento falhou definitivamente em {context}: {info} 🔴🔴🔴")
-            return total - len(failed), len(failed)
+
+    failed = _isolar_recusados_403(client, failed, context)
+    if failed:
+        print(f"🔴🔴🔴 {len(failed)} documentos falharam definitivamente em {context} 🔴🔴🔴")
+        for motivo, refs in _agrupar_falhas_bulk(failed).items():
+            print(f"🔴 {motivo} -> {len(refs)} docs: {' | '.join(refs)}")
+    return total - len(failed), len(failed)
 

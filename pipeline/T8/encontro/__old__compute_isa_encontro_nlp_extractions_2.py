@@ -7,7 +7,6 @@ import json
 from multiprocessing import Pool, cpu_count
 import threading
 import itertools
-from elasticsearch.helpers import parallel_bulk
 
 def regex_search(c):
     #regex_num = r'(?<!\w)[0-9]+[.,]?[0-9]*'
@@ -109,14 +108,7 @@ def worker(c: pd.DataFrame):
         c = maestro.keep_columns(df= c, arrayColumns= ["id", "prontuario", "id_enterprise", "id_hospital", "paciente_id", "dt_encontro", "local_encontro", "termos_texto", "termos_achados", "criterios_extraidos", "texto_evolucao_agg"])
             
         actions = maestro.generate_actions(c, "encontros")
-        for success, info in parallel_bulk(
-            client,
-            actions,
-            raise_on_error=False,
-            raise_on_exception=False
-        ):
-            if not success:
-                print(f'🔴🔴🔴 Documento falhou em sinais vitais:{info} 🔴🔴🔴')
+        maestro.bulk_upload_with_retry(client, actions, context="encontro", thread_count=1)
 
     job = threading.Thread(target= elk_upload, args=(c.copy(), ))
     job_3 = threading.Thread(target=dataRequest.set_data_on_sql, args=(c, "isa_encontro"), kwargs={"if_exists": "append", "isLocal": True})
