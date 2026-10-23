@@ -19,7 +19,7 @@ COLUNAS_DOWNLOAD = {
 }
 
 def main():
-    print(f"Iniciando downloader_{TABELA_ORIGEM}")
+    print(f"Iniciando downloader_{TABELA_DESTINO}")
     inicio = time.perf_counter()
     query_downloader = f"""
         SELECT

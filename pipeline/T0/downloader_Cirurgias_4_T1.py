@@ -1,74 +1,58 @@
 from ImpararePackage import dataRequest
-from ImpararePackage  import maestro
 import pandas as pd
-from multiprocessing import Pool, cpu_count
+import time
 
-def worker_uploader(c: pd.DataFrame) -> int:
-    dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "surgeries_rgo", if_exists= "append")
-    return len(c)
+# Tabela separada para rodar lado a lado com o downloader_vital_signs e comparar os dois
+TABELA_DESTINO = "surgeries_rgo_v2"
+TABELA_ORIGEM = "surgeries_rgo"
+
+COLUNAS_DOWNLOAD = {
+    "created_at": "date",
+    "record_id": "integer",
+    "attendance_id": "integer",
+    "attendance_type": "text",
+    "provider_name": "text",
+    "creation_date": "timestamp",
+    "close_date": "timestamp",
+    "surgery_description": "text",
+    "id_hospital": "SMALLINT",
+}
 
 def main():
-    print("Inciando downloader Cirurgias 4")
-    colunas_download = {
-        "created_at": ("surgeries_rgo.created_at", "date"),
-        "record_id": ("surgeries_rgo.record_id", "integer"), 
-        "attendance_id": ("surgeries_rgo.attendance_id", "integer"), 
-        "attendance_type": ("surgeries_rgo.attendance_type", "text"),
-        "provider_name": ("surgeries_rgo.provider_name", "text"),
-        "creation_date": ("surgeries_rgo.creation_date", "timestamp"),
-        "close_date": ("surgeries_rgo.close_date", "timestamp"),
-        "surgery_description": ("surgeries_rgo.surgery_description", "text"),
-        "id_hospital": ("surgeries_rgo.id_hospital","integer"),
-    }
-
-    colunas_destino = {k: v[1] for k, v in colunas_download.items()}
-    select_fields = [f"{v[0]}::{v[1]} AS {k}" for k, v in colunas_download.items()]
-    
-    query_dowloader = f"""
-        select 
-            {', '.join(select_fields)} 
-        FROM surgeries_rgo
+    print(f"Iniciando downloader_{TABELA_DESTINO}")
+    inicio = time.perf_counter()
+    query_downloader = f"""
+        SELECT
+            {', '.join([f'{k}::{v}' for k, v in COLUNAS_DOWNLOAD.items()])}
+        FROM {TABELA_ORIGEM}
     """
-    replace = True
+
+    last_date = None
     try:
-        query_last_dowloaded_date = """
-            SELECT 
-                created_at 
-            FROM surgeries_rgo
-            ORDER BY created_at DESC
-            LIMIT 1
-        """
-        df = dataRequest.get_data(queryText= query_last_dowloaded_date, chunck= None)
-
+        df = dataRequest.get_data(queryText= f"SELECT max(created_at) AS created_at FROM {TABELA_DESTINO}", chunck= None)
         last_date = df.iloc[0]["created_at"]
-        if last_date is not None and not pd.isna(last_date):
-            query_dowloader += f" WHERE date(created_at) > '{last_date}'"
-            print(f"Buscando todos os dados novos desde: {last_date}")
-            replace = False
-    except:
-        print(f"Erro na busca da ultima data, baixando tudo novamente")
+    except Exception:
+        print(f"Erro na busca da ultima data de descrições cirurgicas em {TABELA_DESTINO}, baixando tudo novamente")
 
-    if replace:
-        replace_query = f"""
-            DROP TABLE IF EXISTS surgeries_rgo;
-            CREATE UNLOGGED TABLE surgeries_rgo (
-                {', '.join([f'{k} {v}' for k, v in colunas_destino.items()])}
+    sql_antes = None
+    if last_date is not None and pd.notna(last_date):
+        query_downloader += f" WHERE date(created_at) > '{last_date}'"
+        print(f"Buscando todos os dados novos desde: {last_date} (exclusive)")
+        create_index_wellhead = f"""CREATE INDEX IF NOT EXISTS idx_{TABELA_ORIGEM}_created_at_record_id ON {TABELA_ORIGEM} ((created_at::date), record_id);"""
+        dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
+    else:
+        sql_antes = f"""
+            DROP TABLE IF EXISTS {TABELA_DESTINO};
+            CREATE UNLOGGED TABLE {TABELA_DESTINO} (
+                {', '.join([f'{k} {v}' for k, v in COLUNAS_DOWNLOAD.items()])}
             );
         """
-        dataRequest.execute(replace_query)
 
-    create_index_wellhead = """CREATE INDEX IF NOT EXISTS idx_surgeries_rgo_created_at_record_id ON surgeries_rgo (id_hospital,(created_at::date), record_id);"""
-    dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
-    create_index_local = """CREATE INDEX IF NOT EXISTS idx_surgeries_rgo_created_at_record_id ON surgeries_rgo (created_at, record_id);"""
-    dataRequest.execute(create_index_local)
+    sql_depois = f"""CREATE INDEX IF NOT EXISTS idx_{TABELA_DESTINO}_created_at_record_id ON {TABELA_DESTINO} (created_at, record_id);"""
 
-    df = dataRequest.get_data(queryText= query_dowloader, chunck= 100000, isWellheadEngine=True)
-    count = 0
-    with Pool(4) as pool:
-        for result in pool.imap_unordered(worker_uploader, df):
-            count += result
-    
-    print(f"Baixado no total: {count} linhas em surgeries_rgo - downloader Cirurgias 4")
+    leitor = dataRequest.copy_from_wellhead_to_local_with_stream(query_downloader, TABELA_DESTINO, sql_antes, sql_depois)
+
+    print(f"Baixado no total: {leitor.linhas} linhas em {TABELA_DESTINO} em {time.perf_counter() - inicio:.1f}s - downloader_{TABELA_DESTINO}")
 
 if __name__ == "__main__":
     main()

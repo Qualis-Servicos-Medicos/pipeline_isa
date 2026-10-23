@@ -1,81 +1,63 @@
 from ImpararePackage import dataRequest
-from ImpararePackage import maestro
 import pandas as pd
-from multiprocessing import Pool, cpu_count
+import time
 
-def worker_uploader(c: pd.DataFrame) -> int:
-    dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "blood_culture_reports", if_exists= "append")
-    return len(c)
+# Tabela separada para rodar lado a lado com o downloader_vital_signs e comparar os dois
+TABELA_DESTINO = "blood_culture_reports_v2"
+TABELA_ORIGEM = "blood_culture_reports"
+
+COLUNAS_DOWNLOAD = {
+    "created_at": "date",
+    "record_id": "integer",
+    "attendance_type": "text", 
+    "exam_lab_name": "text",
+    "laboratory_request_id": "integer", 
+    "blood_culture_request_date": "timestamp", 
+    "blood_culture_collection_date": "timestamp",
+    "signature_date": "timestamp",
+    "colony_obs_description": "text",
+    "material_obs_description": "text",
+    "material_description": "text",
+    "bacteriological_description": "text",
+    "bacterioscopic_description": "text",
+    "id_hospital": "SMALLINT",
+}
 
 def main():
-    print ("Iniciando downloader_blood_culture_reports")
-    colunas_download = {
-        "created_at": ("blood_culture_reports.created_at", "date"),
-        "record_id": ("blood_culture_reports.record_id", "integer"),
-        "attendance_type": ("blood_culture_reports.attendance_type", "text"), 
-        "exam_lab_name": ("blood_culture_reports.exam_lab_name", "text"),
-        "laboratory_request_id": ("blood_culture_reports.laboratory_request_id", "integer"), 
-        "blood_culture_request_date": ("blood_culture_reports.blood_culture_request_date", "timestamp"), 
-        "blood_culture_collection_date": ("blood_culture_reports.blood_culture_collection_date", "timestamp"),
-        "signature_date": ("blood_culture_reports.signature_date", "timestamp"),
-        "colony_obs_description": ("blood_culture_reports.colony_obs_description", "text"),
-        "material_obs_description": ("blood_culture_reports.material_obs_description", "text"),
-        "material_description": ("blood_culture_reports.material_description", "text"),
-        "bacteriological_description": ("blood_culture_reports.bacteriological_description", "text"),
-        "bacterioscopic_description": ("blood_culture_reports.bacterioscopic_description", "text"),
-        "id_hospital": ("blood_culture_reports.id_hospital", "integer"),
-    }
-
-    colunas_destino = {k: v[1] for k, v in colunas_download.items()}
-    select_fields = [f"{v[0]}::{v[1]} AS {k}" for k, v in colunas_download.items()]
-    
-    query_dowloader = f"""
-        SELECT 
-            {', '.join(select_fields)}
-        FROM blood_culture_reports
+    print(f"Iniciando downloader_{TABELA_DESTINO}")
+    inicio = time.perf_counter()
+    query_downloader = f"""
+        SELECT
+            {', '.join([f'{k}::{v}' for k, v in COLUNAS_DOWNLOAD.items()])}
+        FROM {TABELA_ORIGEM}
     """
 
-    replace = True
+    last_date = None
     try:
-        query_last_dowloaded_date = """
-            SELECT 
-                created_at 
-            FROM blood_culture_reports
-            ORDER BY created_at DESC
-            LIMIT 1
-        """
-        df = dataRequest.get_data(queryText= query_last_dowloaded_date, chunck= None)
-
+        df = dataRequest.get_data(queryText= f"SELECT max(created_at) AS created_at FROM {TABELA_DESTINO}", chunck= None)
         last_date = df.iloc[0]["created_at"]
-        if last_date is not None and not pd.isna(last_date):
-            query_dowloader += f" WHERE date(created_at) > '{last_date}'"
-            print(f"Buscando todos os dados novos desde: {last_date}")
-            replace = False
-    except:
-        print(f"Erro na busca da ultima data de criacao, baixando tudo novamente")
+    except Exception:
+        print(f"Erro na busca da ultima data de culturas em {TABELA_DESTINO}, baixando tudo novamente")
 
-    if replace:
-        replace_query = f"""
-            DROP TABLE IF EXISTS blood_culture_reports;
-            CREATE UNLOGGED TABLE blood_culture_reports (
-                {', '.join([f'{k} {v}' for k, v in colunas_destino.items()])}
+    sql_antes = None
+    if last_date is not None and pd.notna(last_date):
+        query_downloader += f" WHERE date(created_at) > '{last_date}'"
+        print(f"Buscando todos os dados novos desde: {last_date} (exclusive)")
+        create_index_wellhead = f"""CREATE INDEX IF NOT EXISTS idx_{TABELA_ORIGEM}_created_at_record_id ON {TABELA_ORIGEM} ((created_at::date), record_id);"""
+        dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
+    else:
+        sql_antes = f"""
+            DROP TABLE IF EXISTS {TABELA_DESTINO};
+            CREATE UNLOGGED TABLE {TABELA_DESTINO} (
+                {', '.join([f'{k} {v}' for k, v in COLUNAS_DOWNLOAD.items()])}
             );
         """
-        dataRequest.execute(replace_query)
 
-    create_index_wellhead = """CREATE INDEX IF NOT EXISTS idx_blood_culture_reports_created_at_record_id ON blood_culture_reports (id_hospital, created_at, record_id);"""
-    dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
-    create_index_local = """CREATE INDEX IF NOT EXISTS idx_blood_culture_reports_created_at_record_id ON blood_culture_reports (created_at, record_id);"""
-    dataRequest.execute(create_index_local)
+    sql_depois = f"""CREATE INDEX IF NOT EXISTS idx_{TABELA_DESTINO}_created_at_record_id ON {TABELA_DESTINO} (created_at, record_id);"""
 
-    df = dataRequest.get_data(queryText= query_dowloader, chunck= 100000, isWellheadEngine=True)
+    leitor = dataRequest.copy_from_wellhead_to_local_with_stream(query_downloader, TABELA_DESTINO, sql_antes, sql_depois)
 
-    count = 0
-    with Pool(4) as pool:
-        for result in pool.imap_unordered(worker_uploader, df):
-            count += result
-        
-    print(f"Baixado no total: {count} linhas em blood_culture_reports - downloader_blood_culture_reports")
+    print(f"Baixado no total: {leitor.linhas} linhas em {TABELA_DESTINO} em {time.perf_counter() - inicio:.1f}s - downloader_{TABELA_DESTINO}")
 
 if __name__ == "__main__":
     main()

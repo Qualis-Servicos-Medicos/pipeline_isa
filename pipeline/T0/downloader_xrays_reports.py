@@ -17,7 +17,7 @@ COLUNAS_DOWNLOAD = {
 }
 
 def main():
-    print("Iniciando downloader_xrays_reports")
+    print(f"Iniciando downloader_{TABELA_DESTINO}")
     inicio = time.perf_counter()
     query_downloader = f"""
         SELECT
