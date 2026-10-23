@@ -6,7 +6,7 @@ def main():
     joins = ""
     for s in maestro.CRITERIOS_TEMPORAL_SUFFIX:
         for cri in maestro.CRITERIOS_FEATURE_EXTRACTION_MODELO:
-            columns += f"df_cri{s}.{cri}{s}_proportion,\n"
+            columns += f"df_cri{s}.{cri}{s} as {cri}{s}_proportion,\n"
             columns += f"df_cri{s}.{cri}{s}_sent_pos_count,\n"
 
         joins += f"""LEFT JOIN imparare2_search_criteria_dense{s} df_cri{s}
