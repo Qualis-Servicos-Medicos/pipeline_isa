@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 def main(testing: bool = True):
     GABARITO = "caso infeccao"
     x = None
-    path = "/workspaces/imparare-surface-materdei-neo/ScriptsLibrary/pipeline/T6"
+    path = "/workspaces/pipeline_isa/ScriptsLibrary/pipeline/T6"
     query = f"""
         SELECT 
             pa."{GABARITO}",
@@ -30,6 +30,7 @@ def main(testing: bool = True):
         inner join new_avaliacao_padrao_ouro pa
             on dtf.prontuario = pa.registro 
                 and dtf.dia = pa.dt_infeccao
+        where dtf.evo_count_dia > 0
     """
     
     x = dataRequest.get_data(queryText= query, chunck= None)

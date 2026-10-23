@@ -13,22 +13,26 @@ def process_chunck(c: pd.DataFrame):
         outra_infec = row['outra_infec']
         dt_infeccao = row['aval_dt_infec']
         paciente_id = row['paciente_id']
+        id_enterprise = row['id_enterprise']
 
         if infeccao == 'sem infecção':
             for j in range(1, 4):
                 objects.append({
                     "registro": paciente_id,
+                    "id_enterprise": id_enterprise,
                     "dt_infeccao": dt_infeccao + pd.Timedelta(days= j),
                     "tipo_infeccao": infeccao
                 })
                 objects.append({
                     "registro": paciente_id,
+                    "id_enterprise": id_enterprise,
                     "dt_infeccao": dt_infeccao - pd.Timedelta(days= j),
                     "tipo_infeccao": infeccao
                 })
 
             objects.append({
                 "registro": paciente_id,
+                "id_enterprise": id_enterprise,
                 "dt_infeccao": dt_infeccao,
                 "tipo_infeccao": infeccao
             })
@@ -36,6 +40,7 @@ def process_chunck(c: pd.DataFrame):
             for j in range(7): 
                 objects.append({
                     "registro": paciente_id,
+                    "id_enterprise": id_enterprise,
                     "dt_infeccao": dt_infeccao + pd.Timedelta(days= j),
                     "tipo_infeccao": infeccao if infeccao != 'outra' else outra_infec
                 })
@@ -52,7 +57,7 @@ def process_chunck(c: pd.DataFrame):
         df_encoded['comunitaria'] = False
     
     df_encoded['caso infeccao hospitalar'] = df_encoded.apply(lambda x: x['caso infeccao'] and not x['comunitaria'], axis= 1)
-
+    
     dataRequest.set_data_on_sql(df= df_encoded, nomeTabelaDestino= "new_avaliacao_padrao_ouro", if_exists= "append")
 
 def main():
@@ -79,6 +84,7 @@ def main():
         DROP TABLE IF EXISTS new_avaliacao_padrao_ouro;
         CREATE UNLOGGED TABLE new_avaliacao_padrao_ouro (
             registro INTEGER,
+            id_enterprise SMALLINT,
             dt_infeccao DATE,
             "caso infeccao" BOOLEAN DEFAULT FALSE,
             "caso infeccao hospitalar" BOOLEAN DEFAULT FALSE,
@@ -95,9 +101,12 @@ def main():
             ia.paciente_id, 
             ia.aval_dt_infec::DATE,
             ia.tipo_infeccao,
-            {case_nomes_outra_infec} as outra_infec
+            {case_nomes_outra_infec} as outra_infec,
+            h.id_enterprise
         FROM isa_avaliacao ia
-        -- WHERE ia.avaliacao_responsavel = 'stephani_materdei_hmg'
+        INNER JOIN hospital h
+            ON ia.id_hospital = h.id_hospital
+        WHERE ia.avaliacao_responsavel != 'stephani_hmg_2'
         order by tipo_infeccao
     """
     df = dataRequest.get_data(queryText= query_get_avaliacoes, isLocal= False)
