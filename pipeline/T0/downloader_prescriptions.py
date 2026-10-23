@@ -2,7 +2,7 @@ from ImpararePackage import dataRequest
 import pandas as pd
 import time
 
-TABELA_DESTINO = "prescriptions_V2"
+TABELA_DESTINO = "prescriptions"
 TABELA_ORIGEM = "prescriptions"
 
 COLUNAS_DOWNLOAD = {
@@ -31,11 +31,11 @@ def main():
         df = dataRequest.get_data(queryText= f"SELECT max(created_at) AS created_at FROM {TABELA_DESTINO}", chunck= None)
         last_date = df.iloc[0]["created_at"]
     except Exception:
-        print(f"Erro na busca da ultima data de sinais vitais em {TABELA_DESTINO}, baixando tudo novamente")
+        print(f"Erro na busca da ultima data de prescricoes em {TABELA_DESTINO}, baixando tudo novamente")
 
     sql_antes = None
     if last_date is not None and pd.notna(last_date):
-        query_downloader += f" AND date(created_at) > '{last_date}'"
+        query_downloader += f" WHERE date(created_at) > '{last_date}'"
         print(f"Buscando todos os dados novos desde: {last_date} (exclusive)")
         create_index_wellhead = f"""CREATE INDEX IF NOT EXISTS idx_{TABELA_ORIGEM}_created_at_record_id ON {TABELA_ORIGEM} ((created_at::date), record_id);"""
         dataRequest.execute(create_index_wellhead, isWellheadEngine= True)
