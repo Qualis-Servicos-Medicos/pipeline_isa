@@ -1,6 +1,58 @@
 from ImpararePackage import dataRequest, maestro
 from multiprocessing import Pool, cpu_count
 import pandas as pd
+import unicodedata
+import re
+
+
+def normalize_text(value):
+    if pd.isna(value):
+        return ""
+    s = str(value).strip().upper()
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("utf-8")
+    s = s.replace("º", "").replace("°", "")
+    s = re.sub(r"[^A-Z0-9/%./-]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def normalize_uni_medida(value):
+    s = normalize_text(value)
+
+    # regras gerais por padrão
+    if re.search(r"(CELSIUS|GRAUS.*CELSIUS|C$)", s):
+        return "GRAUS CELSIUS"
+    if re.search(r"BPM|BEAT|PULSO", s):
+        return "BPM"
+    if re.search(r"MMHG|MM HG", s):
+        return "MMHG"
+    if re.search(r"MG.*DL|MG%", s):
+        return "MGDL"
+    if re.search(r"SPO2|SAT O2|SATO2", s):
+        return "SPO2"
+    if re.search(r"FIO2|FI O2", s):
+        return "FIO2"
+    if re.search(r"LITROS.*MIN|LPM|L/MIN", s):
+        return "LITROS/MIN"
+    if re.search(r"SEGUNDOS|SEG", s):
+        return "SEG"
+    if re.search(r"MMOL.*L|MMOL", s):
+        return "MMOLL"
+    if re.search(r"METRO.*CUB|M3", s):
+        return "M3"
+
+    # exceções pontuais
+    aliases = {
+        "CM": "CM",
+        "KG": "KG",
+        "ML": "ML",
+        "H2O": "H2O",
+        "IRPM": "RPM",
+        "RPM": "RPM",
+        "%": "%",
+        "VALOR": "",
+    }
+
+    return aliases.get(s, s)
 
 
 def worker(c: pd.DataFrame):
@@ -10,6 +62,8 @@ def worker(c: pd.DataFrame):
         "TECNICO(A) EM ENFERMAGEM" : "TECNICO_A_EM_ENFERMAGEM",
     }
     c["perfil"] = c["perfil"].map(perfil_translator).fillna("OUTROS")
+
+    c["uni_medida"] = c["uni_medida"].apply(normalize_uni_medida)
 
     desejos = ["ENFERMEIRO_A_", "TECNICO_A_EM_ENFERMAGEM", "OUTROS"]
     perfil_categorico = c["perfil"].astype(pd.CategoricalDtype(categories=desejos))
