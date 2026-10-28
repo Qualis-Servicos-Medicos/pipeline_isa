@@ -221,7 +221,7 @@ def main():
             DROP TABLE IF EXISTS imparare2_dataset_enfermagem_categ;
             CREATE UNLOGGED TABLE imparare2_dataset_enfermagem_categ (
                 registro INTEGER,
-                dia TIMESTAMP,
+                dia date,
                 id_enterprise SMALLINT,
                 idade_dias FLOAT,
                 idade_meses FLOAT,
@@ -266,7 +266,7 @@ def main():
             select 
                 registro AS registro,
                 dia::date AS dia,
-                id_enterprise::SMALLINT AS id_enterprise,
+                de.id_enterprise::SMALLINT AS id_enterprise,
                 MIN("FC") AS "FC_min",
                 MAX("FC") AS "FC_max",
                 MIN("FR") AS "FR_min",
@@ -295,10 +295,11 @@ def main():
                 ((de.dia - pr.birthdate) / 30.44)::smallint as idade_meses
             from imparare2_sinalvitais_pivot de
             INNER join (
-                select distinct record_id, birthdate from patients_records
+                select distinct record_id, birthdate, h.id_enterprise from patients_records p inner join hospitals h on p.id_hospital = h.id_hospital 
             ) pr
                 on de.registro = pr.record_id
-            GROUP BY registro, pr.birthdate, id_enterprise, dia
+                    and de.id_enterprise = pr.id_enterprise
+            GROUP BY registro, pr.birthdate, de.id_enterprise, dia
         ) a
         where idade_dias >= 0
     """

@@ -290,7 +290,7 @@ def main():
     """
     df_iterator = dataRequest.get_data(queryText= append_query)
 
-    with Pool(4) as pool:
+    with Pool(3) as pool:
         for _ in pool.imap_unordered(worker, df_iterator):
             pass
 

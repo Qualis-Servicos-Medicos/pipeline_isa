@@ -134,7 +134,7 @@ def worker(c: pd.DataFrame):
     
     colunas = ["registro", "dia", 
         "FC", "FR", "HGT", "PAS", "PAM", "PAD", "TEMP", "OXIMETRIA", "O2", "FIO2", "PEEP",
-        "perfil_ENFERMEIRO_A_", "perfil_TECNICO_A_EM_ENFERMAGEM", "perfil_OUTROS"]
+        "perfil_ENFERMEIRO_A_", "perfil_TECNICO_A_EM_ENFERMAGEM", "perfil_OUTROS", "id_enterprise"]
     c = maestro.keep_columns(df= c, arrayColumns= colunas)
     
     dataRequest.set_data_on_sql(df= c, nomeTabelaDestino= "imparare2_sinalvitais_pivot", if_exists= "append")

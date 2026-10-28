@@ -14,6 +14,11 @@ def main():
                 df_pct_dia.idade_anos::SMALLINT AS idade_anos,
                 df_pct_dia.idade_dias::INT4 AS idade_dias,
                 df_pct_dia.los_dias::SMALLINT,
+                df_pct_dia.los::SMALLINT,
+                df_pct_dia.los_on_previous_hospitalization::SMALLINT,
+                df_pct_dia.days_synce_previous_hospitalizations::SMALLINT,
+                df_pct_dia.los_on_next_hospitalization::SMALLINT,
+                df_pct_dia.days_to_next_hospitalizations::SMALLINT,
                 -- ------------------------------------
                 --          Cirurgias
                 -- ------------------------------------
@@ -225,7 +230,7 @@ def main():
                     AND df_pct_dia.id_enterprise = df_cir.id_enterprise
             LEFT JOIN imparare2_dataset_enfermagem_categ df_enf_svt
                 ON df_pct_dia.registro = df_enf_svt.registro
-                    AND df_pct_dia.dia = df_enf_svt.dia
+                    AND df_pct_dia.dia = df_enf_svt.dia::date
                     AND df_pct_dia.id_enterprise = df_enf_svt.id_enterprise
             LEFT JOIN imparare2_dataset_evolucao df_evo
                 ON df_pct_dia.registro = df_evo.prontuario
