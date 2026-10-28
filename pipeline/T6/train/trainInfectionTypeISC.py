@@ -39,10 +39,9 @@ def main(testing: bool = True):
         print("Necessário carregar um pandas dataframe")
         return
     
-    x.to_feather(f"{path}/data/dados_treino_modelo_comunitaria_or_iras.feather")
+    x.to_feather(f"{path}/data/dados_treino_isc_or_others.feather")
     y = x[GABARITO]
     meta = x[["prontuario", "dia", "id_enterprise"]].copy()
-    # x.drop(columns= [GABARITO, "dia", "prontuario"], inplace= True)
     x.drop(columns= [GABARITO, "dia", "prontuario", "id_enterprise", "idade_anos"], inplace= True) # +list(filter(lambda z: "sent_pos_count" in str(z), x.columns.tolist())), inplace= True)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size= 0.2, random_state= 42, stratify= y)#, shuffle= True)
@@ -84,10 +83,10 @@ def main(testing: bool = True):
     negativos = erros[(erros["y_true"] == 0) & (erros["y_pred"] == 0)]
     falsos_negativos = erros[(erros["y_true"] == 1) & (erros["y_pred"] == 0)]
 
-    falsos_positivos[["prontuario", "dia"]].to_csv(f"{path}/falsos_positivos.csv", sep= ";", index= False)
-    falsos_negativos[["prontuario", "dia"]].to_csv(f"{path}/falsos_negativos.csv", sep= ";", index= False)
-    positivos[["prontuario", "dia"]].to_csv(f"{path}/positivos.csv", sep= ";", index= False)
-    negativos[["prontuario", "dia"]].to_csv(f"{path}/negativos.csv", sep= ";", index= False)
+    falsos_positivos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/falsos_positivos_isc.csv", sep= ";", index= False)
+    falsos_negativos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/falsos_negativos_isc.csv", sep= ";", index= False)
+    positivos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/positivos_isc.csv", sep= ";", index= False)
+    negativos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/negativos_isc.csv", sep= ";", index= False)
     print(f"Falsos positivos: {len(falsos_positivos)} | Falsos negativos: {len(falsos_negativos)}")
 
     
@@ -113,7 +112,7 @@ def main(testing: bool = True):
         y_pred_best_threshold = (predictions >= best_threshold).astype(int)
         print("Confusion Matrix (Best Threshold):\n", confusion_matrix(y_test, y_pred_best_threshold))
         print("Classification Report (Best Threshold):\n", classification_report(y_test, y_pred_best_threshold))
-        joblib.dump(model, f"{path}/models/modelo1_caso_comunitaria_or_iras.joblib")
+        joblib.dump(model, f"{path}/models/modelo1_caso_isc_or_others.joblib")
     
 
         predictions = model.predict_proba(x_test)
@@ -128,7 +127,7 @@ def main(testing: bool = True):
 
         df_result_GROUPED = df.groupby(by="proba_1").sum()
         print(df_result_GROUPED)
-        df_result_GROUPED.to_csv(f"{path}/distribution.csv", sep= ";")
+        df_result_GROUPED.to_csv(f"{path}/distribution_isc.csv", sep= ";")
 
         plt.figure(figsize=(20, 10))
         plt.plot(df_result_GROUPED["count"], label= "Acontecimentos")
@@ -139,7 +138,7 @@ def main(testing: bool = True):
         plt.show()
 
         importance_series = pd.Series(model.feature_importances_, index=x_train.columns).sort_values(ascending=False)
-        importance_series.to_csv('importancias_random_forest.csv', index=True)
+        importance_series.to_csv('importancias_caso_isc_or_others.csv', index=True)
         top20_features = importance_series.head(20).index.tolist()
 
         target_col = GABARITO
