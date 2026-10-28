@@ -12,7 +12,7 @@ def main():
                 ci.paciente_id::int4                                        AS paciente_id, 
                 ci.id_enterprise::int2                                      AS id_enterprise,
                 ci.dt_infeccao::date                                        AS dt_infeccao, 
-                ci.proba_1::float4                                          AS prob_perc,
+                MAX(ci.proba_1)::float4                                          AS prob_perc,
                 0::float4                                                   AS prob_perc_pnm, 
                 0::int4                                                     AS pred_pnm,
                 0::float4                                                   AS prob_perc_traqueo, 
@@ -25,16 +25,18 @@ def main():
                 0::int4                                                     AS pred_isc,
                 0::float4                                                   AS prob_perc_ipcs, 
                 0::int4                                                     AS pred_ipcs,
-                (1 - ccir.proba_1)::float4 AS prob_perc_comunitaria,
-                (CASE WHEN ccir.proba_1 IS NOT NULL AND  (1 - ccir.proba_1) > 0.5 THEN 1 ELSE 0 END)::int4 AS pred_comunitaria,
-                ccir.proba_1::float4 AS prob_perc_iras,
-                (CASE WHEN ccir.proba_1 IS NOT NULL AND ccir.proba_1 >= 0.5 THEN 1 ELSE 0 END)::int4 AS pred_iras,
+                (1 - MAX(ccir.proba_1))::float4 AS prob_perc_comunitaria,
+                (CASE WHEN MAX(ccir.proba_1) IS NOT NULL AND  (1 - MAX(ccir.proba_1)) > 0.5 THEN 1 ELSE 0 END)::int4 AS pred_comunitaria,
+                MAX(ccir.proba_1)::float4 AS prob_perc_iras,
+                (CASE WHEN MAX(ccir.proba_1) IS NOT NULL AND MAX(ccir.proba_1) >= 0.5 THEN 1 ELSE 0 END)::int4 AS pred_iras,
                 (ci.dt_infeccao - INTERVAL '3 day')::date AS dt_inicio,
                 (ci.dt_infeccao + INTERVAL '3 day')::date AS dt_fim
             FROM imparare2_new_isa_infeccao AS ci 
                 LEFT JOIN imparare2_new_isa_set_scored_casos_comunitaria_or_iras_rescaled ccir
                     ON ci.paciente_id = ccir.prontuario
-                        AND ci.dt_infeccao = ccir.dia;
+                        AND ci.id_enterprise = ccir.id_enterprise
+                        AND ccir.dia between ci.dt_infeccao - INTERVAL '3 day' AND ci.dt_infeccao + INTERVAL '3 day'
+            group by ci.paciente_id, ci.dt_infeccao, ci.id_enterprise;
     """)
 
 if __name__ == "__main__":
