@@ -61,6 +61,12 @@ def main():
                     	AND cr.id_enterprise = pct_dia.id_enterprise
                	    limit 1
                ), false) AS cirurgia_dentro_ultimos_30_dias,
+                (select MAX(surgery_infection_risky) from (SELECT
+                        cr.surgery_infection_risky
+                    FROM imparare2_cirurgias_grouped_day_joined AS cr 
+                    WHERE pct_dia.registro = cr."REGISTRO" 
+                        AND cr."DATA" BETWEEN pct_dia.dia - INTERVAL '30 day' AND pct_dia.dia - INTERVAL '1 day'
+                        AND cr.id_enterprise = pct_dia.id_enterprise) )as surgery_infection_risky_past_30_days,
                COALESCE(
                     (SELECT
                		  true
@@ -69,10 +75,17 @@ def main():
                         AND cr."DATA" BETWEEN pct_dia.dia - INTERVAL '90 day' AND pct_dia.dia - INTERVAL '1 day'
                         AND cr.id_enterprise = pct_dia.id_enterprise 
                	    limit 1
-               ), false) AS cirurgia_dentro_ultimos_90_dias
+               ), false) AS cirurgia_dentro_ultimos_90_dias,
+                (select MAX(surgery_infection_risky) from (SELECT
+                        cr.surgery_infection_risky
+                    FROM imparare2_cirurgias_grouped_day_joined AS cr 
+                    WHERE pct_dia.registro = cr."REGISTRO" 
+                        AND cr."DATA" BETWEEN pct_dia.dia - INTERVAL '90 day' AND pct_dia.dia - INTERVAL '1 day'
+                        AND cr.id_enterprise = pct_dia.id_enterprise) )as surgery_infection_risky_past_90_days
             FROM imparare2_dataset_label pct_dia
             LEFT JOIN imparare2_cirurgias_grouped_day_joined cj
                 on pct_dia.registro = cj."REGISTRO"
+                    and pct_dia.id_enterprise = cj.id_enterprise
                     and pct_dia.dia = cj."DATA";
         
         CREATE INDEX IF NOT EXISTS idx_cir_reg_dia ON imparare2_dataset_cirurgias (id_enterprise, prontuario, dia);

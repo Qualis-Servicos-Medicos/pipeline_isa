@@ -8,8 +8,9 @@ def main():
             SELECT CIR.patient_id
             , CIR.dt_procedimento as data
             , sum(CIR.tempo_de_cirurgia) as tempo_cirurgia_dia
-            , count(*) as count_procedimentos_dia,
-            CIR.id_enterprise
+            , count(*) as count_procedimentos_dia
+            , max(surgery_infection_risky) as surgery_infection_risky
+            , CIR.id_enterprise
         FROM imparare2_t1_cirurgias_3_3 CIR
         GROUP BY CIR.patient_id, CIR.id_enterprise, CIR.dt_procedimento;
     """)

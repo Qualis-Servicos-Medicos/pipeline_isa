@@ -25,7 +25,9 @@ def main():
                 df_cir.tempo_cirurgia_hoje::INT4 AS cirurgia_tempo_total,
                 df_cir.count_laudos_cirurgias_hoje::SMALLINT AS cirurgia_procedimentos_total,
                 df_cir.cirurgia_dentro_ultimos_30_dias AS cirurgia_em_30_dias,
+                df_cir.surgery_infection_risky_past_30_days AS cirurgia_risco_infeccao_30_dias,
                 df_cir.cirurgia_dentro_ultimos_90_dias AS cirurgia_em_90_dias,
+                df_cir.surgery_infection_risky_past_90_days AS cirurgia_risco_infeccao_90_dias,
                 -- ------------------------------------
                 --          Sinais vitais
                 -- ------------------------------------

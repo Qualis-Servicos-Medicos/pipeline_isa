@@ -20,6 +20,7 @@ def main():
 				coalesce(note.texto_cirurgia, 'Descrição não informada') as texto_cirurgia,
 				string_agg(proc.nome_procedimento, ', ') as nome_procedimento,
 				count(distinct proc.nome_procedimento)::smallint,
+                max(proc.surgery_infection_risky)::smallint as surgery_infection_risky,
 				proc.id_enterprise::smallint as id_enterprise
 			from imparare2_t1_cirurgias_3_3 as proc
 			left join imparare2_t1_cirurgias_4_4 as note

@@ -11,6 +11,7 @@ def main():
                 c1.tempo_cirurgia_dia AS tempo_cirurgia_dia,
                 c1.count_procedimentos_dia::SMALLINT AS count_procedimentos_dia,
                 c2.laudos_dia AS laudos_dia,
+                c1.surgery_infection_risky,
                 c1.id_enterprise::SMALLINT AS id_enterprise
             FROM imparare2_t1_cirurgias_3_4 c1
             INNER JOIN imparare2_t1_cirurgias_4_6 c2
