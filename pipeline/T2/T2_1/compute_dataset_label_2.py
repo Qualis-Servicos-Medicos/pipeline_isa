@@ -20,7 +20,7 @@ def main():
                 id_enterprise::SMALLINT as id_enterprise,
                 MAX(los) los,
                 MAX(los_on_previous_hospitalization) los_on_previous_hospitalization,
-                MAX(days_synce_previous_hospitalizations) days_synce_previous_hospitalizations,
+                MAX(days_since_previous_hospitalizations) days_since_previous_hospitalizations,
                 max(los_on_next_hospitalization) los_on_next_hospitalization,
                 max(days_to_next_hospitalizations) days_to_next_hospitalizations
             FROM imparare2_paciente_dia_internacao_with_label_nova as d

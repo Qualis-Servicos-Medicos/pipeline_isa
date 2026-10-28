@@ -16,7 +16,7 @@ def main():
                 df_pct_dia.los_dias::SMALLINT,
                 df_pct_dia.los::SMALLINT,
                 df_pct_dia.los_on_previous_hospitalization::SMALLINT,
-                df_pct_dia.days_synce_previous_hospitalizations::SMALLINT,
+                df_pct_dia.days_since_previous_hospitalizations::SMALLINT,
                 df_pct_dia.los_on_next_hospitalization::SMALLINT,
                 df_pct_dia.days_to_next_hospitalizations::SMALLINT,
                 -- ------------------------------------

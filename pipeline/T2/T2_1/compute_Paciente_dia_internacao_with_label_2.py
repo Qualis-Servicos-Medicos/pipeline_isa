@@ -37,7 +37,7 @@ def main():
             COALESCE(int.alta, 'AINDA INTERNADO') as alta,
             int.los,
             int2.los as los_on_previous_hospitalization,
-            int.dthr_atendimento::date - int2.dthr_alta::date as days_synce_previous_hospitalizations,
+            int.dthr_atendimento::date - int2.dthr_alta::date as days_since_previous_hospitalizations,
             int3.los as los_on_next_hospitalization,
             int3.dthr_atendimento::date - int.dthr_alta::date as days_to_next_hospitalizations,
             pac.id_enterprise
