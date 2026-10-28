@@ -84,10 +84,10 @@ def main(testing: bool = True):
     negativos = erros[(erros["y_true"] == 0) & (erros["y_pred"] == 0)]
     falsos_negativos = erros[(erros["y_true"] == 1) & (erros["y_pred"] == 0)]
 
-    falsos_positivos[["prontuario", "dia"]].to_csv(f"{path}/falsos_positivos.csv", sep= ";", index= False)
-    falsos_negativos[["prontuario", "dia"]].to_csv(f"{path}/falsos_negativos.csv", sep= ";", index= False)
-    positivos[["prontuario", "dia"]].to_csv(f"{path}/positivos.csv", sep= ";", index= False)
-    negativos[["prontuario", "dia"]].to_csv(f"{path}/negativos.csv", sep= ";", index= False)
+    falsos_positivos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/falsos_positivos_comunitaria_or_iras.csv", sep= ";", index= False)
+    falsos_negativos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/falsos_negativos_comunitaria_or_iras.csv", sep= ";", index= False)
+    positivos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/positivos_comunitaria_or_iras.csv", sep= ";", index= False)
+    negativos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/negativos_comunitaria_or_iras.csv", sep= ";", index= False)
     print(f"Falsos positivos: {len(falsos_positivos)} | Falsos negativos: {len(falsos_negativos)}")
 
     
@@ -128,7 +128,7 @@ def main(testing: bool = True):
 
         df_result_GROUPED = df.groupby(by="proba_1").sum()
         print(df_result_GROUPED)
-        df_result_GROUPED.to_csv(f"{path}/distribution.csv", sep= ";")
+        df_result_GROUPED.to_csv(f"{path}/distribution_comunitaria_or_iras.csv", sep= ";")
 
         plt.figure(figsize=(20, 10))
         plt.plot(df_result_GROUPED["count"], label= "Acontecimentos")
@@ -139,7 +139,7 @@ def main(testing: bool = True):
         plt.show()
 
         importance_series = pd.Series(model.feature_importances_, index=x_train.columns).sort_values(ascending=False)
-        importance_series.to_csv('importancias_random_forest.csv', index=True)
+        importance_series.to_csv('importancias_caso_comunitaria_or_iras.csv', index=True)
         top20_features = importance_series.head(20).index.tolist()
 
         target_col = GABARITO

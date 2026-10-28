@@ -21,8 +21,8 @@ def main():
                 0::int4                                                     AS pred_pav,
                 0::float4                                                   AS prob_perc_itu, 
                 0::int4                                                     AS pred_itu,
-                0::float4                                                   AS prob_perc_isc, 
-                0::int4                                                     AS pred_isc,
+                MAX(isc.proba_1)::float4                                    AS prob_perc_isc, 
+                (CASE WHEN MAX(isc.proba_1) IS NOT NULL AND MAX(isc.proba_1) >= 0.5 THEN 1 ELSE 0 END)::int4 AS pred_isc,
                 0::float4                                                   AS prob_perc_ipcs, 
                 0::int4                                                     AS pred_ipcs,
                 (1 - MAX(ccir.proba_1))::float4 AS prob_perc_comunitaria,
@@ -36,6 +36,10 @@ def main():
                     ON ci.paciente_id = ccir.prontuario
                         AND ci.id_enterprise = ccir.id_enterprise
                         AND ccir.dia between ci.dt_infeccao - INTERVAL '3 day' AND ci.dt_infeccao + INTERVAL '3 day'
+                LEFT JOIN imparare2_new_isa_set_scored_casos_isc_or_others_rescaled isc
+                    ON ci.paciente_id = isc.prontuario
+                        AND ci.id_enterprise = isc.id_enterprise
+                        AND isc.dia between ci.dt_infeccao - INTERVAL '3 day' AND ci.dt_infeccao + INTERVAL '3 day'
             group by ci.paciente_id, ci.dt_infeccao, ci.id_enterprise;
     """)
 

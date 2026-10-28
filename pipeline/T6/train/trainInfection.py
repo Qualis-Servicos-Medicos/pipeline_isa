@@ -40,7 +40,7 @@ def main(testing: bool = True):
     
     x.to_feather(f"{path}/data/dados_treino_modelo_infeccao.feather")
     y = x[GABARITO]
-    meta = x[["prontuario", "dia"]].copy()
+    meta = x[["prontuario", "dia", "id_enterprise"]].copy()
     # x.drop(columns= [GABARITO, "dia", "prontuario"], inplace= True)
     x.drop(columns= [GABARITO, "dia", "prontuario", "idade_anos"]+list(filter(lambda z: "sent_pos_count" in str(z), x.columns.tolist())), inplace= True)
  
@@ -82,8 +82,8 @@ def main(testing: bool = True):
     falsos_positivos = erros[(erros["y_true"] == 0) & (erros["y_pred"] == 1)]
     falsos_negativos = erros[(erros["y_true"] == 1) & (erros["y_pred"] == 0)]
 
-    falsos_positivos[["prontuario", "dia"]].to_csv(f"{path}/falsos_positivos.csv", sep= ";", index= False)
-    falsos_negativos[["prontuario", "dia"]].to_csv(f"{path}/falsos_negativos.csv", sep= ";", index= False)
+    falsos_positivos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/falsos_positivos.csv", sep= ";", index= False)
+    falsos_negativos[["prontuario", "dia", "id_enterprise"]].to_csv(f"{path}/falsos_negativos.csv", sep= ";", index= False)
     print(f"Falsos positivos: {len(falsos_positivos)} | Falsos negativos: {len(falsos_negativos)}")
 
     if True:
