@@ -32,7 +32,7 @@ def main(testing: bool = True):
                 and dtf."dia" = pa.dt_infeccao
         where pa."caso infeccao" = True
             -- AND dtf.los_dias <= 3
-            AND pa."caso infeccao hospitalar" = True
+            -- AND pa."caso infeccao hospitalar" = True
             AND dtf.cirurgia_em_90_dias = True
             AND dtf.cirurgia_em_90_dias IS NOT NULL
             AND dtf.evo_count_dia > 0

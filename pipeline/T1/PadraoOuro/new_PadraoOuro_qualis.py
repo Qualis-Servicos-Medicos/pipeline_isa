@@ -107,7 +107,7 @@ def main():
         INNER JOIN hospital h
             ON ia.id_hospital = h.id_hospital
         WHERE ia.avaliacao_responsavel != 'stephani_hmg_2'
-            and ia.avaliacao_data < '2026-10-25'
+            -- and ia.avaliacao_data < '2026-10-25'
         order by tipo_infeccao
     """
     df = dataRequest.get_data(queryText= query_get_avaliacoes, isLocal= False)
