@@ -496,20 +496,13 @@ KWON_SURGERY_RISKY = {
     "ABSCESSO OU CISTO HEPATICO - DRENAGEM IN" : 4,
 }
 
-
-
-def normalizar_texto(texto) -> str:
-    if texto is None:
-        return ""
-    texto_sem_acento = unicodedata.normalize('NFD', str(texto))# .encode('ascii', 'ignore').decode("utf-8")
-    return texto_sem_acento.strip().upper().replace('"', '')
-
-def parse_surgery_risky(surgeryDescription: str) -> int | None:
+def parse_surgery_risky(surgeryDescription: str) -> int:
     """Essa função recebe o nome da cirurgia e tenta encontrar um match conhecido para o risco da cirurgia, caso não exista ela é repassada como sem risco"""
-    risky = KWON_SURGERY_RISKY.get(surgeryDescription.strip().upper().replace('"', ''))# .get(normalizar_texto(surgeryDescription))
+    risky = KWON_SURGERY_RISKY.get(surgeryDescription.strip().upper().replace('"', ''))
     if risky is None:
-        print(f"Classificação de risco desconhecido para cirurgia: {surgeryDescription}")
-    return risky
+        pass
+        # print(f"Classificação de risco desconhecido para cirurgia: {surgeryDescription}")
+    return risky or 0
 
 def worker(c:pd.DataFrame):
   

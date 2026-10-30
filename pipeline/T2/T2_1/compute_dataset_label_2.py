@@ -25,9 +25,8 @@ def main():
                 max(days_to_next_hospitalizations) days_to_next_hospitalizations
             FROM imparare2_paciente_dia_internacao_with_label_nova as d
             GROUP BY d.registro, d.dia, id_enterprise;
-
-        CREATE INDEX IF NOT EXISTS imparare2_dataset_label_idx_1 ON imparare2_dataset_label(id_enterprise, registro, dia);
     """)
+    dataRequest.execute("""CREATE INDEX IF NOT EXISTS imparare2_dataset_label_idx_1 ON imparare2_dataset_label(id_enterprise, registro, dia);""")
 
 if __name__ == "__main__":
     main()

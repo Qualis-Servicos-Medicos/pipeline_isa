@@ -28,6 +28,11 @@ def main():
                 df_cir.surgery_infection_risky_past_30_days AS cirurgia_risco_infeccao_30_dias,
                 df_cir.cirurgia_dentro_ultimos_90_dias AS cirurgia_em_90_dias,
                 df_cir.surgery_infection_risky_past_90_days AS cirurgia_risco_infeccao_90_dias,
+                df_cir.days_since_risky_zero,
+                df_cir.days_since_risky_one,
+                df_cir.days_since_risky_two,
+                df_cir.days_since_risky_thre,
+                df_cir.days_since_risky_four,
                 -- ------------------------------------
                 --          Sinais vitais
                 -- ------------------------------------
@@ -250,9 +255,9 @@ def main():
                 ON df_pct_dia.registro = df_rx.prontuario
                     AND df_pct_dia.dia = df_rx.dia
                     AND df_pct_dia.id_enterprise = df_rx.id_enterprise;
-
-        CREATE INDEX IF NOT EXISTS idx_dataset_label_intermediario ON imparare2_dataset_label_intermediario (id_enterprise, prontuario, dia);
     """)
+    
+    dataRequest.execute('CREATE INDEX IF NOT EXISTS idx_dataset_label_intermediario ON imparare2_dataset_label_intermediario (id_enterprise, prontuario, dia);')
 
 if __name__ == "__main__":
     main()

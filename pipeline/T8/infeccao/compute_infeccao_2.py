@@ -221,7 +221,7 @@ def main():
             to_timestamp(dt_inicio::text || ' 00:00:00', 'YYYY-MM-DD hh24:mi:ss')::timestamp as dt_inicio, 
             to_timestamp(dt_fim::text || ' 00:00:00', 'YYYY-MM-DD hh24:mi:ss')::timestamp as dt_fim,
             c.id_hospital
-        FROM "imparare2_isa_infeccao_v2" s
+        FROM imparare2_isa_infeccao_v2 s
         INNER JOIN imparare_patient_company_treatment c 
             ON s.paciente_id = c.record_id
 	            AND s.id_enterprise = c.id_enterprise 

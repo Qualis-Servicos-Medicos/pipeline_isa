@@ -43,7 +43,7 @@ def main(testing: bool = True):
     y = x[GABARITO]
     meta = x[["prontuario", "dia", "id_enterprise"]].copy()
     # x.drop(columns= [GABARITO, "dia", "prontuario"], inplace= True)
-    x.drop(columns= [GABARITO, "dia", "prontuario", "id_enterprise", "idade_anos"], inplace= True) # +list(filter(lambda z: "sent_pos_count" in str(z), x.columns.tolist())), inplace= True)
+    x.drop(columns= [GABARITO, "dia", "prontuario", "id_enterprise", "idade_anos", "cirurgia_risco_infeccao_90_dias", "cirurgia_risco_infeccao_30_dias"], inplace= True) # +list(filter(lambda z: "sent_pos_count" in str(z), x.columns.tolist())), inplace= True)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size= 0.2, random_state= 42, stratify= y)#, shuffle= True)
     

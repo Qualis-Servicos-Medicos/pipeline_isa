@@ -31,6 +31,10 @@ def main(testing: bool = True):
             on dtf.prontuario = pa.registro 
                 and dtf."dia" = pa.dt_infeccao
         where pa."caso infeccao" = True
+            -- AND dtf.los_dias <= 3
+            AND pa."caso infeccao hospitalar" = True
+            AND dtf.cirurgia_em_90_dias = True
+            AND dtf.cirurgia_em_90_dias IS NOT NULL
             AND dtf.evo_count_dia > 0
     """
 
@@ -42,21 +46,24 @@ def main(testing: bool = True):
     x.to_feather(f"{path}/data/dados_treino_isc_or_others.feather")
     y = x[GABARITO]
     meta = x[["prontuario", "dia", "id_enterprise"]].copy()
-    x.drop(columns= [GABARITO, "dia", "prontuario", "id_enterprise", "idade_anos"], inplace= True) # +list(filter(lambda z: "sent_pos_count" in str(z), x.columns.tolist())), inplace= True)
+    x.drop(columns= [GABARITO, "dia", "prontuario", "id_enterprise", "idade_anos", 
+                     #"cirurgia_risco_infeccao_90_dias", "cirurgia_risco_infeccao_30_dias"
+                     ]+list(filter(lambda z: "sent_pos_count" in str(z), x.columns.tolist())), inplace= True) # +list(filter(lambda z: "sent_pos_count" in str(z), x.columns.tolist())), inplace= True)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size= 0.2, random_state= 42, stratify= y)#, shuffle= True)
     
     model = RandomForestClassifier(
         random_state= 20, 
-        n_estimators= 200, 
+        n_estimators= 100, 
         criterion= "entropy",
         # max_leaf_nodes= 120,
-        ccp_alpha=0.002,
-        # min_samples_leaf= 2, 
+        ccp_alpha=0.0020,
+        min_samples_leaf= 4, 
         n_jobs=-1, 
         max_depth= None,
         max_features= 'sqrt',
-        class_weight= {0: 1.0, 1: 12.0}
+        # class_weight= 'balanced'
+        class_weight= {0: 1.0, 1: 3.0}
     )
 
     model = model.fit(x_train, y_train)

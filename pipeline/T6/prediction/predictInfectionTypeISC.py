@@ -54,6 +54,8 @@ def main():
                 and idlf.dia = inf.dia 
                 and idlf.id_enterprise = inf.id_enterprise
         where inf.proba_1 > 0.4
+            AND idlf.cirurgia_em_90_dias = True
+            AND idlf.cirurgia_em_90_dias IS NOT NULL
     """
     
     path = "/workspaces/pipeline_isa/ScriptsLibrary/pipeline/T6"

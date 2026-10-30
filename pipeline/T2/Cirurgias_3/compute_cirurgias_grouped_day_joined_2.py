@@ -1,9 +1,9 @@
 from ImpararePackage import dataRequest
 
 def main():
-    dataRequest.execute('DROP TABLE IF EXISTS imparare2_cirurgias_grouped_day_joined')
     dataRequest.execute("""
         SET synchronous_commit = off;
+        DROP TABLE IF EXISTS imparare2_cirurgias_grouped_day_joined;
         CREATE UNLOGGED TABLE imparare2_cirurgias_grouped_day_joined AS
             SELECT DISTINCT 
                 c1.patient_id AS "REGISTRO",
@@ -17,7 +17,8 @@ def main():
             INNER JOIN imparare2_t1_cirurgias_4_6 c2
                 ON c1.patient_id = c2.patient_id
                     AND c1.data = c2.data
-                    AND c1.id_enterprise = c2.id_enterprise
-        """)
+                    AND c1.id_enterprise = c2.id_enterprise;
+    """)
+    dataRequest.execute('CREATE INDEX IF DOES NOT EXISTS imparare2_cirurgias_grouped_day_joined_idx on imparare2_cirurgias_grouped_day_joined(id_enterprise, "DATA", "REGISTRO", surgery_infection_risky);')
 if __name__ == "__main__":
     main()
