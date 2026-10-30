@@ -4,7 +4,7 @@ def main():
     if maestro.get_must_update_all_patients() == "1":
         create_query = """
             DROP TABLE IF EXISTS isa_suspeita;
-            CREATE UNLOGGED TABLE isa_suspeita (
+            CREATE TABLE isa_suspeita (
                 id TEXT, 
                 paciente_id INTEGER,
                 id_enterprise SMALLINT,
@@ -17,9 +17,10 @@ def main():
                 dthr_internacao TIMESTAMP, 
                 id_hospital smallint
             );
-            """
+        """
         dataRequest.execute(create_query, isLocal= True)
         dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute('CREATE INDEX IF NOT EXISTS isa_suspeita_idx_2 ON isa_suspeita(id_enterprise, id_hospital, dt_infeccao, paciente_id, max_prob);', isLocal= False)
     else:
         # Drop local table
         dataRequest.execute("DELETE FROM isa_suspeita WHERE (paciente_id, id_enterprise) in (select distinct record_id, id_enterprise from patients_to_update)", isLocal= True)

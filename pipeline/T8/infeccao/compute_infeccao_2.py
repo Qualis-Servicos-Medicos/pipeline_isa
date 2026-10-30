@@ -63,7 +63,8 @@ def main():
     if maestro.get_must_update_all_patients() == '1':
         create_query = """
             DROP TABLE IF EXISTS isa_infeccao;
-            CREATE UNLOGGED TABLE isa_infeccao (
+            
+            CREATE TABLE isa_infeccao (
                 id TEXT,
                 paciente_id INTEGER,
                 id_enterprise SMALLINT,
@@ -94,6 +95,7 @@ def main():
         """
         dataRequest.execute(create_query, isLocal= True)
         dataRequest.execute(create_query, isLocal= False)
+        dataRequest.execute('create index if not exists isa_infeccao_new_idx on isa_infeccao(id_enterprise, pred_comunitaria, pred_iras, pred_isc, dt_infeccao, paciente_id);', isLocal= False)
         client.options(ignore_status=[400, 404]).indices.delete(index=index_name)
         
         if not client.indices.exists(index=index_name):
